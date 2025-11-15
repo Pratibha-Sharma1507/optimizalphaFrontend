@@ -213,109 +213,145 @@ const handleExpand = async (rowName) => {
   return (
     <div className="bg-white dark:bg-[#0b0b0b] rounded-xl shadow-lg border border-gray-200 dark:border-[#1a1a1a] w-full">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-[#1f1f1f]">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200">
-          Allocation & Performance
-        </h3>
+  {/* HEADER */}
+  <div className="flex flex-wrap gap-4 sm:gap-6 items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-[#1f1f1f]">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 w-full sm:w-auto">
+      Allocation & Performance
+    </h3>
 
-        <div className="flex gap-5">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600 dark:text-gray-400 text-sm">Allocation by:</span>
-            <select
-              className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
-              value={allocationOption}
-              onChange={(e) => setAllocationOption(e.target.value)}
-            >
-              {allocationOptions.map((opt) => (
-                <option key={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600 dark:text-gray-400 text-sm">Distribution by:</span>
-            <select
-              className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
-              value={distributionOption}
-              onChange={(e) => setDistributionOption(e.target.value)}
-            >
-              {distributionOptions.map((opt) => (
-                <option key={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+      {/* Allocation Dropdown */}
+      <div className="flex items-center gap-2">
+        <span className="text-gray-600 dark:text-gray-400 text-sm whitespace-nowrap">Allocation by:</span>
+        <select
+          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
+          value={allocationOption}
+          onChange={(e) => setAllocationOption(e.target.value)}
+        >
+          {allocationOptions.map((opt) => <option key={opt}>{opt}</option>)}
+        </select>
       </div>
 
-      {/* TABLE */}
-<div className="overflow-x-auto scroll-smooth scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-  <table className="w-full text-sm table-auto border-collapse">
-    <thead className="bg-gray-100 dark:bg-[#0F0F0F] sticky top-0 z-10">
-      <tr>
-        {columns.map((col) => (
-          <th
-            key={col}
-            className="px-6 py-3 border-b border-gray-200 dark:border-[#1f1f1f] text-left text-gray-700 dark:text-gray-400 font-semibold whitespace-nowrap"
-          >
-            <div className="flex items-center gap-2">
-              {col}
-              <HeaderSortIcon />
-            </div>
-          </th>
+      {/* Distribution Dropdown */}
+      <div className="flex items-center gap-2">
+        <span className="text-gray-600 dark:text-gray-400 text-sm whitespace-nowrap">Distribution by:</span>
+        <select
+          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
+          value={distributionOption}
+          onChange={(e) => setDistributionOption(e.target.value)}
+        >
+          {distributionOptions.map((opt) => <option key={opt}>{opt}</option>)}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  {/* TABLE / MOBILE VIEW */}
+  <div className="overflow-x-auto scroll-smooth scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+
+    <table className="hidden sm:table w-full text-sm table-auto border-collapse">
+      <thead className="bg-gray-100 dark:bg-[#0F0F0F] sticky top-0 z-10">
+        <tr>
+          {columns.map((col) => (
+            <th
+              key={col}
+              className="px-6 py-3 border-b border-gray-200 dark:border-[#1f1f1f] text-left text-gray-700 dark:text-gray-400 font-semibold whitespace-nowrap"
+            >
+              <div className="flex items-center gap-2">
+                {col}
+                <HeaderSortIcon />
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {data.map((row) => (
+          <React.Fragment key={row.Name}>
+            <tr
+              onClick={() => handleExpand(row.Name)}
+              className="cursor-pointer bg-white dark:bg-[#141414] hover:bg-gray-100 dark:hover:bg-[#1d1d1d] border-b border-gray-200 dark:border-[#1f1f1f]"
+            >
+              {columns.map((col, i) => (
+                <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                  {i === 0 ? (
+                    <div className="flex items-center gap-2 font-medium">
+                      <ExpandArrow open={expanded === row.Name} /> {row[col]}
+                    </div>
+                  ) : ["Today Total", "Yesterday Total"].includes(col) ? (
+                    formatValue(row[col], true)
+                  ) : (
+                    row[col] ?? "—"
+                  )}
+                </td>
+              ))}
+            </tr>
+
+            {expanded === row.Name &&
+              subData[row.Name]?.map((sub, i2) => (
+                <tr key={i2} className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515]">
+                  {columns.map((col, i3) => (
+                    <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                      {i3 === 0 ? (
+                        <span className="pl-10">{sub[col]}</span>
+                      ) : ["Today Total", "Yesterday Total"].includes(col) ? (
+                        formatValue(sub[col], true)
+                      ) : (
+                        sub[col] ?? "—"
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+          </React.Fragment>
         ))}
-      </tr>
-    </thead>
+      </tbody>
+    </table>
 
-    <tbody>
+    {/* 📱 MOBILE CARD VIEW */}
+    <div className="sm:hidden space-y-3 p-3">
       {data.map((row) => (
-        <React.Fragment key={row.Name}>
-          {/* Parent Row */}
-          <tr
-            onClick={() => handleExpand(row.Name)}
-            className="cursor-pointer bg-white dark:bg-[#141414] hover:bg-gray-100 dark:hover:bg-[#1d1d1d] border-b border-gray-200 dark:border-[#1f1f1f]"
-          >
-            {columns.map((col, i) => (
-              <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                {i === 0 ? (
-                  <div className="flex items-center gap-2 font-medium">
-                    <ExpandArrow open={expanded === row.Name} /> {row[col]}
-                  </div>
-                ) : ["Today Total", "Yesterday Total"].includes(col) ? (
-                  formatValue(row[col], true)
-                ) : (
-                  row[col] ?? "—"
-                )}
-              </td>
-            ))}
-          </tr>
+        <div
+          key={row.Name}
+          onClick={() => handleExpand(row.Name)}
+          className="border border-gray-300 dark:border-[#333] rounded-lg p-3 bg-white dark:bg-[#141414] shadow-sm"
+        >
+          <div className="flex justify-between font-semibold text-gray-900 dark:text-gray-200">
+            {row.Name}
+            <ExpandArrow open={expanded === row.Name} />
+          </div>
 
-          {/* Expand Row */}
-          {expanded === row.Name &&
-            subData[row.Name]?.map((sub, i2) => (
-              <tr
-                key={i2}
-                className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515] transition-all"
-              >
-                {columns.map((col, i3) => (
-                  <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                    {i3 === 0 ? (
-                      <span className="pl-10">{sub[col]}</span>
-                    ) : ["Today Total", "Yesterday Total"].includes(col) ? (
-                      formatValue(sub[col], true)
-                    ) : (
-                      sub[col] ?? "—"
-                    )}
-                  </td>
-                ))}
-              </tr>
+          <div className="mt-2 text-gray-700 dark:text-gray-400 space-y-1 text-sm">
+            {columns.slice(1).map((col) => (
+              <div key={col} className="flex justify-between">
+                <span className="font-medium">{col}:</span>
+                <span>{row[col] ?? "—"}</span>
+              </div>
             ))}
-        </React.Fragment>
+          </div>
+
+          {/* Expanded Details */}
+          {expanded === row.Name && subData[row.Name] && (
+            <div className="mt-3 bg-gray-50 dark:bg-[#0b0b0b] p-3 rounded-md">
+              {subData[row.Name].map((sub, i2) => (
+                <div key={i2} className="border-b border-gray-300 dark:border-[#222] pb-2 mb-2">
+                  {columns.map((col) => (
+                    <div key={col} className="flex justify-between text-xs py-1">
+                      <span className="font-medium">{col}:</span>
+                      <span>{sub[col] ?? "—"}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       ))}
-    </tbody>
-  </table>
+    </div>
+
+  </div>
 </div>
 
-    </div>
   );
 }
