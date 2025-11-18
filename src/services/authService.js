@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie'; // Or useCookies from 'react-cookie'
+
 
 export const authService = {
   // Login user
@@ -29,9 +29,7 @@ export const authService = {
   // Logout user
   logout: async () => {
     try {
-      localStorage.clear();
-      Cookies.remove('token');
-      await axios.post('https://optimizalphabackend.onrender.com/api/logoutuser', {}, {
+      await axios.post('http://localhost:5500/api/logoutuser', {}, {
         withCredentials: true,
       });
     } catch (error) {
@@ -43,7 +41,7 @@ export const authService = {
   // Check if user is logged in (cookie-based only)
   isAuthenticated: async () => {
     try {
-      const response = await axios.get('/api/verifyuser', {
+      const response = await axios.get('https://optimizalphabackend.onrender.com/api/verifyuser', {
         withCredentials: true,
       });
       return response.data.Status === 'Success';

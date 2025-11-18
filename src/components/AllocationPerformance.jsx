@@ -118,7 +118,7 @@ export default function AssetClass1SummaryTable() {
   }, [allocationOption, distributionOption]);
 
   // ---------------- EXPAND ROW ----------------
-  // ---------------- EXPAND ROW ----------------
+
 const handleExpand = async (rowName) => {
   if (expanded === rowName) {
     setExpanded(null);

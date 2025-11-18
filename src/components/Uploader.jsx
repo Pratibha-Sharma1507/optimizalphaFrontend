@@ -25,7 +25,7 @@ export default function Uploader() {
     fetchUser();
   }, []);
 
-  // ✅ File selection validation
+  // File selection validation
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (
@@ -37,12 +37,12 @@ export default function Uploader() {
       setFile(selected);
       setMessage("");
     } else {
-      setMessage("⚠️ Please upload a valid CSV or Excel file.");
+      setMessage(" Please upload a valid CSV or Excel file.");
       setFile(null);
     }
   };
 
-  // ✅ Upload handler
+  //  Upload handler
   const handleUpload = async () => {
     if (!file) {
       setMessage("No file selected.");
@@ -56,7 +56,7 @@ export default function Uploader() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("account_id", accountId); // 👈 important
+    formData.append("account_id", accountId); //  important
 
     try {
       setLoading(true);

@@ -15,8 +15,6 @@ export default function Dashboard() {
   const hasFetchedRef = useRef(false); // To prevent double fetch
 const [selectedPan, setSelectedPan] = useState(localStorage.getItem("selectedPan") || "All");
 
-//  console.log('dashboard', response.data)
-  // Memoized fetch function
 
 const fetchPortfolios = async () => {
   try {
@@ -26,7 +24,7 @@ const fetchPortfolios = async () => {
 
     let url = "";
 
-    // 👉 अब हमेशा state से check होगा (NOT ONLY LOCALSTORAGE)
+  
     if (selectedPan === "All") {
       url = `${API_ENDPOINT}?currency=${currency}`;
     } else {
@@ -46,13 +44,13 @@ const fetchPortfolios = async () => {
 };
 
 
-//  यह effect अब PAN बदलने पर + currency बदलने पर API call करेगा
+
 useEffect(() => {
   fetchPortfolios();
 }, [currency, selectedPan]);
 
 
-//  यह listener sidebar से selectedPan update करेगा LIVE
+
 useEffect(() => {
   const listener = () => {
     setSelectedPan(localStorage.getItem("selectedPan") || "All");
@@ -275,15 +273,19 @@ useEffect(() => {
       {key === "today_total" && (
         <p className="text-[11px] text-gray-700 dark:text-neutral-400 mt-1">
           Today's Change:{" "}
-          <span
-            className={
-              Number(first.today_total - first.yesterday_total) < 0
-                ? "text-red-500"
-                : "text-green-400"
-            }
-          >
-            {Number(first.today_total - first.yesterday_total).toFixed(2)}
-          </span>{" "}
+         <span
+  className={
+    Number(first.today_total - first.yesterday_total) < 0
+      ? "text-red-500"
+      : "text-green-400"
+  }
+>
+  {Number(first.today_total - first.yesterday_total) >= 0
+    ? `+${formatValue(first.today_total - first.yesterday_total, true)}`
+    : `-${formatValue(Math.abs(first.today_total - first.yesterday_total), true)}`
+  }
+</span>{" "}
+
           • Last Updated:{" "}
       {formatDate(first.latest_date)}
 
@@ -294,12 +296,7 @@ useEffect(() => {
 </div>
 
       {/* Horizontal Cards */}
-      {/* import { LineChart, Line, ResponsiveContainer } from "recharts"; */}
-
-
-
-
-
+ 
 {/* Horizontal Cards */}
 <div className="relative mb-6 md:mb-8">
   {/* Left scroll button */}
@@ -353,7 +350,7 @@ useEffect(() => {
               {item.numericValue?.toFixed(3)}%
             </h3>
 
-            {/* ✅ Small right-side sparkline */}
+            {/*  Small right-side sparkline */}
             <div className="w-[60px] h-[24px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>

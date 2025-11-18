@@ -72,7 +72,7 @@ export default function FixedIncomeSummaryTable() {
   };
 
   fetchData();
-}, [currency]); // 👈 re-fetch whenever currency changes
+}, [currency]); //  re-fetch whenever currency changes
 
 
   // Level 2 – Fetch Asset Class 2 Summary

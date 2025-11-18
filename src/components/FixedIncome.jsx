@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import FixedIncomeSummaryTable from "./FixedIncomeSummaryTable";
 
-const API_ENDPOINT = "https://optimizalphabackend.onrender.com/api/fixedincome"; // 👈 Update your backend endpoint
+const API_ENDPOINT = "https://optimizalphabackend.onrender.com/api/fixedincome"; // Update your backend endpoint
 
 function KpiCard({ title, value, change, positive }) {
   return (
@@ -41,7 +41,7 @@ function KpiCard({ title, value, change, positive }) {
 }
 
 export default function FixedIncomePanel() {
-  // ✅ Hooks at top
+  // Hooks at top
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -68,7 +68,7 @@ export default function FixedIncomePanel() {
     []
   );
 
-  // ✅ Fetch Data
+  // Fetch Data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -93,7 +93,7 @@ export default function FixedIncomePanel() {
   const symbol = currency === "INR" ? "₹" : "$";
   const locale = currency === "INR" ? "en-IN" : "en-US";
 
-  //  अगर currency format नहीं चाहिए तो simple number return करो
+ 
   if (!isCurrency) return n.toLocaleString(locale);
 
   //  Unit logic for INR
@@ -116,7 +116,7 @@ export default function FixedIncomePanel() {
 };
 
 
-  // ✅ Conditional rendering after hooks
+  // Conditional rendering after hooks
   if (loading)
     return (
       <div className="text-center text-gray-700 dark:text-gray-300 py-10">
@@ -138,7 +138,7 @@ export default function FixedIncomePanel() {
       </div>
     );
 
-  // ✅ Extract first record
+  //  Extract first record
   const first = data[0];
 
   const todayChange =
@@ -162,7 +162,7 @@ export default function FixedIncomePanel() {
     return { ...item, numericValue, isNegative };
   });
 
-  // ✅ Chart Data (Static)
+  //  Chart Data (Static)
   const subAssetData = [
     { name: "Equity", value: 35 },
     { name: "Debt", value: 30 },
@@ -177,7 +177,7 @@ export default function FixedIncomePanel() {
     { name: "Barclays", Price: 450000, FX: 180000, Income: 100000 },
   ];
 
-  // ✅ Main UI
+  //  Main UI
   return (
     <div className="space-y-4 bg-gray-50 dark:bg-[#0A0A0A] text-gray-900 dark:text-white min-h-screen p-3 sm:p-4 md:p-6 transition-colors duration-300">
       {/* ===== TOP SECTION ===== */}

@@ -24,7 +24,7 @@ export default function AuthCallback() {
           
           // Verify the token with backend (cookie is already set by server)
           try {
-            const response = await axios.get("http://localhost:5500/api/verifyuser", {
+            const response = await axios.get("https://optimizalphabackend.onrender.com/api/verifyuser", {
               withCredentials: true,
               headers: {
                 Authorization: `Bearer ${token}`

@@ -36,7 +36,7 @@ export default function Roles() {
 
   //  Assign role
   const handleAssignRole = async (userId, roleId) => {
-    if (!roleId) return alert("⚠️ Please select a role first!");
+    if (!roleId) return alert("Please select a role first!");
     setLoading(true);
     try {
       await axios.post("/assignRole", { userId, roleId });

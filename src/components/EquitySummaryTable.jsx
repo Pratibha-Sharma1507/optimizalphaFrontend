@@ -72,7 +72,7 @@ export default function EquityClass1SummaryTable() {
   };
 
   fetchData();
-}, [currency]); // 👈 re-fetch whenever currency changes
+}, [currency]); //  re-fetch whenever currency changes
 
 
   // Level 2 – Fetch Asset Class 2 Summary
@@ -135,11 +135,10 @@ export default function EquityClass1SummaryTable() {
   const n = Number(v);
   if (Number.isNaN(n)) return v;
 
-  //  currency context/state से लो
   const symbol = currency === "INR" ? "₹" : "$";
   const locale = currency === "INR" ? "en-IN" : "en-US";
 
-  //  अगर currency format नहीं चाहिए तो simple number return करो
+ 
   if (!isCurrency) return n.toLocaleString(locale);
 
   //  Unit logic for INR

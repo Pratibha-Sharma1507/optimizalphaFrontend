@@ -41,7 +41,6 @@ const [selectedPan, setSelectedPan] = useState(localStorage.getItem("selectedPan
 const [panList, setPanList] = useState([]);
 const [searchTerm, setSearchTerm] = useState("");
 
-//  यह लाइन panList के तुरंत बाद रखो
 const filteredPanList = panList.filter(item =>
   item.pan_no?.toLowerCase().includes(searchTerm.toLowerCase())
 );

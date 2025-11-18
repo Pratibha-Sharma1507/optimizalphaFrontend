@@ -32,7 +32,7 @@ export default function DashboardLayout({ theme, setTheme }) {
             setTheme={setTheme}
             currency={currency}
             setCurrency={setCurrency}
-            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} // ✅ pass handler
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} //  pass handler
           />
         </header>
 
