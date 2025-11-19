@@ -42,7 +42,7 @@ const [panList, setPanList] = useState([]);
 const [searchTerm, setSearchTerm] = useState("");
 
 const filteredPanList = panList.filter(item =>
-  item.pan_no?.toLowerCase().includes(searchTerm.toLowerCase())
+  item.account_name?.toLowerCase().includes(searchTerm.toLowerCase())
 );
 
 
@@ -69,14 +69,14 @@ const filteredPanList = panList.filter(item =>
 useEffect(() => {
   const fetchPanList = async () => {
     try {
-      const accountId = localStorage.getItem("acc");
+      const panId = localStorage.getItem("pan");
 
-      if (!accountId) {
-        console.warn("⚠ No account id found in localStorage");
+      if (!panId) {
+        console.warn(" No account id found in localStorage");
         return;
       }
 
-      const res = await axios.get(`https://optimizalphabackend.onrender.com/api/pan-list/${accountId}`, {
+      const res = await axios.get(`https://optimizalphabackend.onrender.com/api/pan-list/${panId}`, {
         withCredentials: true,
       });
 
@@ -84,8 +84,8 @@ useEffect(() => {
 
       // Auto select first PAN only if none selected
       if (!localStorage.getItem("selectedPan") && res.data.length > 0) {
-        setSelectedPan(res.data[0].pan_no);
-        localStorage.setItem("selectedPan", res.data[0].pan_no);
+        setSelectedPan(res.data[0].account_name);
+        localStorage.setItem("selectedPan", res.data[0].account_name);
       }
     } catch (error) {
       console.log(" Error fetching PAN list:", error);
@@ -230,21 +230,21 @@ useEffect(() => {
         {/* Options */}
        {filteredPanList.map((pan) => (
   <button
-    key={pan.pan_no}
+    key={pan.account_name}
     className={`w-full text-left px-3 py-2 text-sm transition 
       hover:bg-gray-200 dark:hover:bg-neutral-800 ${
-        selectedPan === pan.pan_no
+        selectedPan === pan.account_name
           ? "bg-gray-200 dark:bg-neutral-700 font-medium"
           : "text-gray-700 dark:text-neutral-300"
       }`}
     onClick={() => {
-      setSelectedPan(pan.pan_no);
-      localStorage.setItem("selectedPan", pan.pan_no);
+      setSelectedPan(pan.account_name);
+      localStorage.setItem("selectedPan", pan.account_name);
       setDropdownOpen(false);
       window.dispatchEvent(new Event("pan-update"));
     }}
   >
-    {pan.pan_no}
+    {pan.account_name}
   </button>
 ))}
 

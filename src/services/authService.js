@@ -29,7 +29,7 @@ export const authService = {
   // Logout user
   logout: async () => {
     try {
-      await axios.post('http://localhost:5500/api/logoutuser', {}, {
+      await axios.post('https://optimizalphabackend.onrender.com/api/logoutuser', {}, {
         withCredentials: true,
       });
     } catch (error) {

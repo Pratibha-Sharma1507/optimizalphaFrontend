@@ -15,7 +15,7 @@ export default function DeltaVisionAssetClassChart() {
   const [selectedPeriods, setSelectedPeriods] = useState(["FY 2025"]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const viewByOptions = ["Asset Class", "Sub-Asset Class", "Geography", "Custodian", "Entity"];
+  const viewByOptions = ["Asset Class", "Sub-Asset Class", "Geography", "Custodian", "Entity", "Total Group"];
   const allPeriods = ["FY 2025", "FY 2024", "FY 2023", "FY 2022", "FY 2021"];
 
   /** ---------------------- REAL DATA SUPPORT ---------------------- **/
@@ -205,7 +205,16 @@ export default function DeltaVisionAssetClassChart() {
       tick={{ fontSize: 12, fill: "#9ca3af" }}
       height={40}
     />
-    <YAxis stroke="#9ca3af" tick={{ fontSize: 12, fill: "#9ca3af" }} tickFormatter={(v) => `${v}%`} />
+    <YAxis
+  stroke="#9ca3af"
+  tick={{ fontSize: 12, fill: "#9ca3af" }}
+  tickFormatter={(v) =>
+    new Intl.NumberFormat("en-IN", {
+      maximumFractionDigits: 2,
+    }).format(v)
+  }
+/>
+
     <Tooltip formatter={(v) => `${v.toFixed(2)}%`} />
     <Legend wrapperStyle={{ fontSize: "12px", color: "#fff" }} />
 

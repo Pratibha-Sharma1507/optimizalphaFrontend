@@ -71,7 +71,7 @@ const fetchPortfolios = async () => {
   try {
     setLoading(true);
 
-    const accountId = localStorage.getItem("acc");
+    const panId = localStorage.getItem("pan");
 
     let url = "";
 
@@ -79,7 +79,7 @@ const fetchPortfolios = async () => {
     if (selectedPan === "All") {
       url = `${API_ENDPOINT}?currency=${currency}`;
     } else {
-      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${accountId}/${selectedPan}?currency=${currency}`;
+      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${panId}/${selectedPan}?currency=${currency}`;
     }
 
     console.log(" API Running:", url);
@@ -120,11 +120,13 @@ useEffect(() => {
   const topStatsKeys = ["today_total"];
 
   const horizontalItems = [
-      { title: "Daily", key: "daily_return_pct" },
-      { title: "3-Day", key: "3d_return_pct" },
-      { title: "1-Week", key: "1w_return_pct" },
-      { title: "MTD", key: "mtd_return_pct" },
-      { title: "FYTD", key: "fytd_return_pct" },
+      { title: "Daily", key: "daily_return" },
+       { title: "1-Week", key: "1w_return" },
+        { title: "1-Month ", key: "1m_return" },
+          { title: "3-Month ", key: "3m_return" },
+            { title: "6-Month", key: "6m_return" },
+      { title: "MTD", key: "mtd_return" },
+      { title: "FYTD", key: "fytd_return" },
   ];
 
 const formatValue = (v, isCurrency = false) => {
@@ -269,11 +271,11 @@ const formatValue = (v, isCurrency = false) => {
               }`}
             >
              {numericValue != null && !isNaN(numericValue)
-      ? `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(3)}%`
+      ? `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}%`
       : "—"}
             </h3>
 
-            {/* ✅ Small right-side sparkline */}
+            {/*  Small right-side sparkline */}
             <div className="w-[55px] h-[24px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>

@@ -56,7 +56,7 @@ export default function AssetClass1SummaryTable() {
 
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
-  const [acc] = useState(localStorage.getItem('acc'));
+  const [pan] = useState(localStorage.getItem('pan'));
 
   const allocationOptions = ["Member", "Asset Class"];
   const distributionOptions = ["Account", "Asset Class", "Sub Asset Class", "Member"];
@@ -65,11 +65,11 @@ export default function AssetClass1SummaryTable() {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/filter/accounts/${acc}`);
+        const res = await axios.get(`${API_BASE}/filter/accounts/${pan}`);
         setAccounts(res.data);
 
         if (res.data.length > 0) {
-          setSelectedAccount(res.data[0].account_id);
+          setSelectedAccount(res.data[0].pan_id);
         }
       } catch (err) {
         console.error("Error fetching accounts:", err);
@@ -93,12 +93,13 @@ export default function AssetClass1SummaryTable() {
         const transformed = res.data.map((item) => ({
           Name: allocationOption === "Member" ? item.pan_no : (item.asset_class || item.account_name),
           "Today Total": item.today_total ?? "—",
-          "Yesterday Total": item.yesterday_total ?? "—",
           "Daily Return %": item.daily_return_pct ?? "—",
-          "3D Return %": item["3d_return_pct"] ?? "—",
-          "1W Return %": item["1w_return_pct"] ?? "—",
-          "MTD Return %": item.mtd_return_pct ?? "—",
-          "FYTD Return %": item.fytd_return_pct ?? "—",
+          "1W Return %": item["1w_return"] ?? "—",
+           "1M Return %": item["1m_return"] ?? "—",
+            "3M Return %": item["3m_return"] ?? "—",
+             "6M Return %": item["6m_return"] ?? "—",        
+          "MTD Return %": item.mtd_return ?? "—",
+          "FYTD Return %": item.fytd_return ?? "—",
         }));
 
         setColumns(Object.keys(transformed[0]));
@@ -148,16 +149,79 @@ const handleExpand = async (rowName) => {
     }
 
     // ========== ASSET CLASS MODE ==========
-    else if (allocationOption === "Asset Class" && distributionOption === "Account") {
-      res = await axios.get(`${API_BASE}/filter/accounts/${selectedAccount}`);
-      nameField = "account_name";
-    }
-    else if (allocationOption === "Asset Class" && distributionOption === "Sub Asset Class") {
-      //  YEH LINE UPDATED HAI
-      res = await axios.get(`${API_BASE}/assetclass2/${selectedAccount}/${rowName}`);
-      console.log("API Response:", res.data);
-      nameField = "sub_asset";
-    }
+   else if (allocationOption === "Asset Class" && distributionOption === "Account") {
+  res = await axios.get(`${API_BASE}/asset-summary/${pan}`);
+
+  //  API response is grouped by asset classes
+  const grouped = res.data;
+
+  //  rowName here is the clicked Asset Class (e.g., "Equity")
+  const selectedAssetClass = rowName;
+
+  //  Extract accounts for just that asset class
+  const accountsForAsset = grouped[selectedAssetClass] || [];
+
+  //  Transform format for Table
+  const transformed = accountsForAsset.map((acc) => ({
+    Name: acc.account_name,
+    "Today Total": acc.today_total ?? "—",
+    "Daily Return %": acc.daily_return ?? "—",
+    "1W Return %": acc["1w_return"] ?? "—",
+    "1M Return %": acc["1m_return"] ?? "—",
+    "3M Return %": acc["3m_return"] ?? "—",
+    "6M Return %": acc["6m_return"] ?? "—",
+    "MTD Return %": acc.mtd_return ?? "—",
+    "FYTD Return %": acc.fytd_return ?? "—",
+  }));
+
+  setSubData((prev) => ({ ...prev, [rowName]: transformed }));
+  return; 
+}
+
+  else if (allocationOption === "Asset Class" && distributionOption === "Sub Asset Class") {
+
+  try {
+    // Step 1: Correct API Call
+    const res = await axios.get(`${API_BASE}/filter/${pan}/${rowName}`);
+
+    console.log("Sub-Asset API Response:", res.data);
+
+    // Step 2: Transform response for table display including all columns
+    const formatted = res.data.map(item => ({
+      Name: item.sub_asset_class ?? item.sub_asset ?? item.asset_class_2,
+      "Today Total": item.today_total ?? "—",
+      // "Yesterday Total": item.yesterday_total ?? item.yesterday_date ?? "—",
+      "Daily Return %": item.daily_return_pct ?? item.daily_return ?? "—",
+      // "3D Return %": item["3d_return"] ?? "—",
+      "1W Return %": item["1w_return"] ?? item["1w_return"] ?? "—",
+      "1M Return %": item["1m_return"] ?? item["1m_return"] ?? "—",
+      "3M Return %": item["3m_return"] ?? item["3m_return"] ?? "—",
+      "6M Return %": item["6m_return"] ?? item["6m_return"] ?? "—",
+      "MTD Return %": item.mtd_return ?? item.mtd_return ?? "—",
+      "FYTD Return %": item.fytd_return ?? item.fytd_return ?? "—",
+
+      // Metadata for next level (if needed later)
+      // isSubAsset: true,
+      // parentAsset: rowName
+    }));
+
+    // Step 3: Update Columns dynamically based on the formatted data
+    setColumns(Object.keys(formatted[0]));
+
+    // Step 4: Store result under expanded row
+    setSubData(prev => ({
+      ...prev,
+      [rowName]: formatted
+    }));
+
+  } catch (error) {
+    console.error("Sub Asset API Error:", error);
+  }
+
+  return;
+}
+
+
     else if (allocationOption === "Asset Class" && distributionOption === "Member") {
       res = await axios.get(`${API_BASE}/filter/pan/${selectedAccount}`);
       nameField = "pan_no";
@@ -209,6 +273,13 @@ const handleExpand = async (rowName) => {
 
     return `${symbol}${n.toLocaleString(locale)}`;
   };
+
+  const formatDecimal = (num) => {
+  if (num == null || isNaN(num)) return "—";
+  let truncated = Math.floor(Number(num) * 100) / 100;
+  return truncated.toFixed(2);
+};
+
 
   return (
     <div className="bg-white dark:bg-[#0b0b0b] rounded-xl shadow-lg border border-gray-200 dark:border-[#1a1a1a] w-full">
@@ -267,46 +338,51 @@ const handleExpand = async (rowName) => {
       </thead>
 
       <tbody>
-        {data.map((row) => (
-          <React.Fragment key={row.Name}>
-            <tr
-              onClick={() => handleExpand(row.Name)}
-              className="cursor-pointer bg-white dark:bg-[#141414] hover:bg-gray-100 dark:hover:bg-[#1d1d1d] border-b border-gray-200 dark:border-[#1f1f1f]"
-            >
-              {columns.map((col, i) => (
-                <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                  {i === 0 ? (
-                    <div className="flex items-center gap-2 font-medium">
-                      <ExpandArrow open={expanded === row.Name} /> {row[col]}
-                    </div>
-                  ) : ["Today Total", "Yesterday Total"].includes(col) ? (
-                    formatValue(row[col], true)
-                  ) : (
-                    row[col] ?? "—"
-                  )}
-                </td>
-              ))}
-            </tr>
-
-            {expanded === row.Name &&
-              subData[row.Name]?.map((sub, i2) => (
-                <tr key={i2} className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515]">
-                  {columns.map((col, i3) => (
-                    <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                      {i3 === 0 ? (
-                        <span className="pl-10">{sub[col]}</span>
-                      ) : ["Today Total", "Yesterday Total"].includes(col) ? (
-                        formatValue(sub[col], true)
-                      ) : (
-                        sub[col] ?? "—"
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-          </React.Fragment>
+  {data.map((row) => (
+    <React.Fragment key={row.Name}>
+      <tr
+        onClick={() => handleExpand(row.Name)}
+        className="cursor-pointer bg-white dark:bg-[#141414] hover:bg-gray-100 dark:hover:bg-[#1d1d1d] border-b border-gray-200 dark:border-[#1f1f1f]"
+      >
+        {columns.map((col, i) => (
+          <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+            {i === 0 ? (
+              <div className="flex items-center gap-2 font-medium">
+                <ExpandArrow open={expanded === row.Name} /> {row[col]}
+              </div>
+            ) : col === "Today Total" ? (
+              formatValue(row[col], true)  // ✔ stay exactly same
+            ) : (
+              !isNaN(row[col]) && row[col] !== null && row[col] !== ""
+                ? Number(row[col]).toFixed(2)  // ✔ apply 2 decimals
+                : (row[col] ?? "—")
+            )}
+          </td>
         ))}
-      </tbody>
+      </tr>
+
+      {expanded === row.Name &&
+        subData[row.Name]?.map((sub, i2) => (
+          <tr key={i2} className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515]">
+            {columns.map((col, i3) => (
+              <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                {i3 === 0 ? (
+                  <span className="pl-10">{sub[col]}</span>
+                ) : col === "Today Total" ? (
+                  formatValue(sub[col], true) // ✔ same here
+                ) : (
+                  !isNaN(sub[col]) && sub[col] !== null && sub[col] !== ""
+                    ? Number(sub[col]).toFixed(2)
+                    : (sub[col] ?? "—")
+                )}
+              </td>
+            ))}
+          </tr>
+        ))}
+    </React.Fragment>
+  ))}
+</tbody>
+
     </table>
 
     {/* 📱 MOBILE CARD VIEW */}
