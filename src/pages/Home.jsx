@@ -20,7 +20,7 @@ const fetchPortfolios = async () => {
   try {
     setLoading(true);
 
-    const panId = localStorage.getItem("pan");
+    const clientId = localStorage.getItem("client");
 
     let url = "";
 
@@ -28,7 +28,7 @@ const fetchPortfolios = async () => {
     if (selectedPan === "All") {
       url = `${API_ENDPOINT}?currency=${currency}`;
     } else {
-      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${panId}/${selectedPan}?currency=${currency}`;
+      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${clientId}/${selectedPan}?currency=${currency}`;
     }
 
     console.log(" API Running:", url);
@@ -72,12 +72,22 @@ useEffect(() => {
 
     if (!isCurrency) return n.toLocaleString(locale);
 
-    if (currency === "INR") {
-      if (n >= 10000000) return `${symbol}${(n / 10000000).toFixed(2)}Cr`;
-      if (n >= 100000) return `${symbol}${(n / 100000).toFixed(2)}L`;
-      if (n >= 1000) return `${symbol}${(n / 1000).toFixed(2)}K`;
-      return `${symbol}${n.toLocaleString(locale)}`;
-    }
+   if (currency === "INR") {
+  if (n >= 10000000) {
+    const cr = n / 10000000;
+    return `${symbol}${Number(cr.toPrecision(4)).toFixed(2)}Cr`;
+  }
+  if (n >= 100000) {
+    const lakh = n / 100000;
+    return `${symbol}${Number(lakh.toPrecision(4)).toFixed(2)}L`;
+  }
+  if (n >= 1000) {
+    const k = n / 1000;
+    return `${symbol}${Number(k.toPrecision(4)).toFixed(2)}K`;
+  }
+  return `${symbol}${n.toLocaleString(locale)}`;
+}
+
 
     if (currency === "USD") {
       if (n >= 1000000000) return `${symbol}${(n / 1000000000).toFixed(2)}B`;
@@ -124,14 +134,14 @@ useEffect(() => {
   const staticData = useMemo(() => ({
     topStatsKeys: ["today_total"],
     horizontalItems: [
-      { title: "Daily", key: "daily_return" },
-      { title: "1-Week", key: "1w_return" },
-        { title: "1-Month ", key: "1m_return" },
-          { title: "3-Month ", key: "3m_return" },
-            { title: "6-Month", key: "6m_return" },
-      { title: "MTD", key: "mtd_return" },
-      { title: "FYTD", key: "fytd_return" },
-    ],
+    { title: "Daily", returnKey: "daily_return"},
+    { title: "1-Week", returnKey: "1w_return", valueKey: "1w_value" },
+    { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
+    { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
+    { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
+    { title: "MTD", returnKey: "mtd_return", valueKey: "mtd_value" },
+    { title: "FYTD", returnKey: "fytd_return", valueKey: "fytd_value" },
+  ],
     insights: [
       { title: "Largest Profit and Loss", desc: "Portfolio P&L is $92,155,175. Largest profit: Netflix $21,051,449; Largest loss: Chipotle $4,337,137." },
       { title: "Portfolio Concentration", desc: "26 of 132 positions make up 98.5% of the portfolio. High concentration observed." },
@@ -187,23 +197,23 @@ useEffect(() => {
   }), []);
 
   //  Memoized horizontal cards data
-  const horizontalCardsData = useMemo(() => {
-    if (!portfolios.length) return [];
-    const first = portfolios[0];
-    
-    return staticData.horizontalItems.map((item) => {
-      const rawValue = first[item.key];
-      const numericString = rawValue ? rawValue.toString().replace(/[^\d.\-−]/g, "") : "0";
-      const isNegative = numericString.startsWith("-") || numericString.startsWith("−");
-      const numericValue = parseFloat(numericString) || 0;
-      
-      return {
-        ...item,
-        isNegative,
-        numericValue
-      };
-    });
-  }, [portfolios, staticData.horizontalItems]);
+const horizontalCardsData = useMemo(() => {
+  if (!portfolios.length) return [];
+  const first = portfolios[0];
+
+  return staticData.horizontalItems.map(item => {
+    const returnValue = first[item.returnKey] ?? 0;
+    const value = item.valueKey ? first[item.valueKey] : null;
+
+    return {
+      ...item,
+      isNegative: returnValue < 0,
+      numericValue: Number(returnValue),
+      value
+    };
+  });
+}, [portfolios, staticData.horizontalItems]);
+
 
   // Improved Loading UI with skeleton
   if (loading) {
@@ -301,64 +311,73 @@ useEffect(() => {
  
 {/* Horizontal Cards */}
 <div className="relative mb-6 md:mb-8">
-  {/* Left scroll button */}
-  <button
-    onClick={() => scroll("left")}
-    className="hidden sm:block absolute -left-4 top-1/2 -translate-y-1/2 bg-gray-300 dark:bg-neutral-800 hover:bg-gray-400 dark:hover:bg-neutral-700 text-gray-900 dark:text-white p-2 rounded-full z-10"
-  >
-    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2" fill="none">
-      <path d="M10 4L6 8l4 4" />
-    </svg>
-  </button>
-
-  {/* Scrollable cards */}
   <div
     ref={scrollRef}
-    className="flex overflow-x-auto gap-3 scrollbar-hide scroll-smooth px-1"
+    className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth px-1"
   >
     {horizontalCardsData.map((item, i) => {
       const lineColor = item.isNegative ? "#ef4444" : "#22c55e";
 
-      // Sample mini trend data
-      const trendData =
-        item.trendData ||
-        Array.from({ length: 8 }, (_, j) => ({
-          value:
-            item.numericValue +
-            (Math.random() - 0.5) * (item.isNegative ? 0.8 : 0.4),
-        }));
+      const trendData = item.trendData || Array.from({ length: 10 }, () => ({
+        value: item.numericValue + (Math.random() - 0.5) * 0.4,
+      }));
 
       return (
         <div
           key={i}
-          className="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-300 dark:border-neutral-800 min-w-[180px] sm:min-w-[200px] flex-shrink-0 shadow-sm hover:shadow-md transition"
+          className="bg-white dark:bg-[#141414] p-4 rounded-xl border border-gray-300 dark:border-neutral-800 
+          min-w-[260px] sm:min-w-[280px] flex-shrink-0 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           {/* Title */}
-          <div className="flex items-start justify-between mb-2">
-            <p className="text-[11px] text-gray-700 dark:text-neutral-400 uppercase tracking-wide">
-              {item.title}
-            </p>
-          </div>
+          <p className="text-[11px] mb-3 font-semibold text-gray-700 dark:text-neutral-400 uppercase tracking-wide">
+            {item.title}
+          </p>
 
-          {/* Value + Sparkline container */}
-          <div className="flex items-center justify-between">
-            {/* % Value */}
-            <h3
-              className={`text-xl font-bold ${
-                item.isNegative ? "text-red-500" : "text-green-500"
-              }`}
-            >
-              {item.numericValue > 0 ? "+" : ""}
-              {item.numericValue?.toFixed(2)}%
-            </h3>
+          {/* CONTENT WRAPPER: RETURN + VALUE LEFT | SPARKLINE RIGHT */}
+          <div className="flex items-center justify-between gap-3">
+            
+            {/* LEFT: Values */}
+            <div className="text-[13px] font-medium flex flex-col gap-1 text-gray-600 dark:text-gray-400">
+              
+              {/* Row — Return */}
+              <div className="flex items-center justify-between w-[120px]">
+                <span className="opacity-75">Return</span>
+                <span
+                  className={`font-bold ${
+                    item.isNegative ? "text-red-500" : "text-green-500"
+                  }`}
+                >
+                  {item.numericValue > 0 ? "+" : ""}
+                  {item.numericValue?.toFixed(2)}%
+                </span>
+              </div>
 
-            {/*  Small right-side sparkline */}
-            <div className="w-[60px] h-[24px]">
+              {/* Row — Value */}
+              <div className="flex items-center justify-between w-[120px]">
+                {item.value !== null && (
+  <div className="flex items-center justify-between w-[120px]">
+    <span className="opacity-75">Value</span>
+    <span className="font-semibold text-gray-900 dark:text-white">
+  {item.value !== null 
+        ? formatValue(Number(item.value), true) 
+        : "—"}
+
+
+
+    </span>
+  </div>
+)}
+
+              </div>
+            </div>
+
+            {/* RIGHT: Sparkline SAME ROW */}
+            <div className="w-[80px] h-[30px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
                   <defs>
                     <linearGradient id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={lineColor} stopOpacity={0.4} />
+                      <stop offset="0%" stopColor={lineColor} stopOpacity={0.45} />
                       <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -369,7 +388,7 @@ useEffect(() => {
                     fill={`url(#gradient-${i})`}
                     strokeWidth={2}
                     dot={false}
-                    animationDuration={1000}
+                    animationDuration={700}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -379,17 +398,8 @@ useEffect(() => {
       );
     })}
   </div>
-
-  {/* Right scroll button */}
-  <button
-    onClick={() => scroll("right")}
-    className="hidden sm:block absolute -right-4 top-1/2 -translate-y-1/2 bg-gray-300 dark:bg-neutral-800 hover:bg-gray-400 dark:hover:bg-neutral-700 text-gray-900 dark:text-white p-2 rounded-full z-10"
-  >
-    <svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2" fill="none">
-      <path d="M6 4l4 4-4 4" />
-    </svg>
-  </button>
 </div>
+
 
       {/* Content Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 md:mb-6">

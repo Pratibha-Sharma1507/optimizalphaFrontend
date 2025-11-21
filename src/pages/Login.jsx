@@ -41,7 +41,7 @@ export default function LoginPage({ setLoggedIn }) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         console.log(role)
         console.log(response.data)
-        localStorage.setItem('pan', response.data.user.pan_id);
+        localStorage.setItem('client', response.data.user.client_id);
         localStorage.setItem('role', role);
         navigate("/dashboard");
       }

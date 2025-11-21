@@ -58,65 +58,131 @@ export default function AssetClass1SummaryTable() {
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [pan] = useState(localStorage.getItem('pan'));
 
-  const allocationOptions = ["Member", "Asset Class"];
-  const distributionOptions = ["Account", "Asset Class", "Sub Asset Class", "Member"];
+  const allocationOptions = ["Asset Class", "Account"];
+  const distributionOptions = ["Account", "Asset Class", "Sub Asset Class"];
 
   // ---------------- GET ACCOUNT LIST ----------------
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/filter/accounts/${pan}`);
-        setAccounts(res.data);
+useEffect(() => {
+  const fetchAccounts = async () => {
+    try {
+      const clientId = localStorage.getItem("client"); // <-- FIX here
 
-        if (res.data.length > 0) {
-          setSelectedAccount(res.data[0].pan_id);
-        }
-      } catch (err) {
-        console.error("Error fetching accounts:", err);
+      console.log("Client ID from storage:", clientId);
+
+      const res = await axios.get(`${API_BASE}/filter/accounts/${clientId}`);
+      setAccounts(res.data);
+
+      if (res.data.length > 0) {
+        setSelectedAccount(res.data[0].client_id);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching accounts:", err);
+    }
+  };
 
-    fetchAccounts();
-  }, []);
+  fetchAccounts();
+}, []);
+
+
+useEffect(() => {
+  const fetchSummary = async () => {
+    try {
+      const clientId = localStorage.getItem("client");
+      const res = await axios.get(`${API_BASE}/pan-summary1/${clientId}`);
+
+      const formatted = res.data.map(item => ({
+        Name: item.client_no,
+        "Today Total": item.today_total ?? "—",
+        "Yesterday Total": item.yesterday_total ?? "—",
+        "Daily Return %": item.daily_return ?? "—",
+        "1W value": item["1w_value"] ?? "—",
+        "1W Return %": item["1w_return"] ?? "—",
+        "1M Value": item["1m_value"] ?? "—",
+        "1M Return %": item["1m_return"] ?? "—",
+        "3M Value": item["3m_value"] ?? "—",
+        "3M Return %": item["3m_return"] ?? "—",
+        "6M Value": item["6m_value"] ?? "—",
+        "6M Return %": item["6m_return"] ?? "—",
+        "MTD Value": item.mtd_value ?? "—",
+        "MTD Return %": item.mtd_return ?? "—",
+        "FYTD Value": item.fytd_value ?? "—",
+        "FYTD Return %": item.fytd_return ?? "—",
+      }));
+
+      setSubData(prev => ({
+        ...prev,
+        "Summary View": formatted
+      }));
+
+    } catch (error) {
+      console.error("Summary API Error:", error);
+    }
+  };
+
+  fetchSummary();
+}, []); 
 
   // ---------------- GET MAIN DATA ----------------
   useEffect(() => {
-    if (!selectedAccount) return;
+  if (!selectedAccount) return;
 
-    const fetchPrimary = async () => {
-      try {
-        let res =
-          allocationOption === "Member"
-            ? await axios.get(`${API_BASE}/filter/pan/${selectedAccount}`)
-            : await axios.get(`${API_BASE}/asset-classes/${selectedAccount}`);
+  const fetchPrimary = async () => {
+    try {
+      let res;
 
-        const transformed = res.data.map((item) => ({
-          Name: allocationOption === "Member" ? item.pan_no : (item.asset_class || item.account_name),
-          "Today Total": item.today_total ?? "—",
-          "Daily Return %": item.daily_return_pct ?? "—",
-          "1W Return %": item["1w_return"] ?? "—",
-           "1M Return %": item["1m_return"] ?? "—",
-            "3M Return %": item["3m_return"] ?? "—",
-             "6M Return %": item["6m_return"] ?? "—",        
-          "MTD Return %": item.mtd_return ?? "—",
-          "FYTD Return %": item.fytd_return ?? "—",
-        }));
-
-        setColumns(Object.keys(transformed[0]));
-        setData(transformed);
-      } catch (err) {
-        console.error("Main Table API Error:", err);
+      // 🔥 Primary table => Always account to asset classes
+      if (allocationOption === "Account") {
+        res = await axios.get(`${API_BASE}/account-summary/${selectedAccount}`);
+      } else {
+        res = await axios.get(`${API_BASE}/asset-classes/${selectedAccount}`);
       }
-    };
 
-    fetchPrimary();
-  }, [selectedAccount, allocationOption]);
+     const transformed = res.data.map((item) => ({
+  Name: allocationOption === "Account"
+    ? item.account_name
+    : (item.asset_class || item.account_name),
+
+  "Today Total": item.today_total ?? "—",
+  "Yesterday Total": item.yesterday_total ?? "—",
+  "Daily Return %": item.daily_return ?? "—",
+  "1W value": item["1w_value"] ?? "—",
+  "1W Return %": item["1w_return"] ?? "—",
+  "1M Value": item["1m_value"] ?? "—",
+  "1M Return %": item["1m_return"] ?? "—",
+  "3M Value": item["3m_value"] ?? "—",
+  "3M Return %": item["3m_return"] ?? "—",
+  "6M Value": item["6m_value"] ?? "—",
+  "6M Return %": item["6m_return"] ?? "—",
+  "MTD Value": item.mtd_value ?? "—",
+  "MTD Return %": item.mtd_return ?? "—",
+  "FYTD Value": item.fytd_value ?? "—",
+  "FYTD Return %": item.fytd_return ?? "—",
+}));
+
+      setColumns(Object.keys(transformed[0]));
+      setData(transformed);
+
+    } catch (error) {
+      console.error("Main Table Fetch Error:", error);
+    }
+  };
+
+  fetchPrimary();
+}, [selectedAccount, allocationOption]);
 
   // reset table expand + sub rows when dropdown changes
-  useEffect(() => {
-    setExpanded(null);
-    setSubData({});
-  }, [allocationOption, distributionOption]);
+useEffect(() => {
+  setExpanded(null);
+
+  setSubData(prev => {
+    const summary = prev["Summary View"] || null; // keep summary
+
+    return summary
+      ? { "Summary View": summary } // preserve only summary row
+      : {};
+  });
+}, [allocationOption, distributionOption]);
+
 
   // ---------------- EXPAND ROW ----------------
 
@@ -133,24 +199,149 @@ const handleExpand = async (rowName) => {
   try {
     let res;
     let nameField;
+     if (rowName === "Summary View") {
+  const clientId = localStorage.getItem("client");
+  const res = await axios.get(`${API_BASE}/pan-summary1/${clientId}`);
+
+  console.log("📌 Summary Raw Response:", res.data);
+
+  if (!res.data || res.data.length === 0) return;
+
+  const formatted = res.data.map(item => ({
+    Name: item.client_no || "—",
+
+    "Today Total": item.today_total ?? "—",
+    "Yesterday Total": item.yesterday_total ?? "—",
+    "Daily Return %": item.daily_return ?? "—",
+
+    "1W Value": item["1w_value"] ?? "—",
+    "1W Return %": item["1w_return"] ?? "—",
+
+    "1M Value": item["1m_value"] ?? "—",
+    "1M Return %": item["1m_return"] ?? "—",
+
+    "3M Value": item["3m_value"] ?? "—",
+    "3M Return %": item["3m_return"] ?? "—",
+
+    "6M Value": item["6m_value"] ?? "—",
+    "6M Return %": item["6m_return"] ?? "—",
+
+    "MTD Value": item.mtd_value ?? "—",
+    "MTD Return %": item.mtd_return ?? "—",
+
+    "FYTD Value": item.fytd_value ?? "—",
+    "FYTD Return %": item.fytd_return ?? "—",
+  }));
+
+  // 🟢 CORRECT: USE formatted — not res.data
+  setColumns(Object.keys(formatted[0]));
+  setSubData(prev => ({
+    ...prev,
+    ["Summary View"]: formatted
+  }));
+
+  console.log("📌 Summary Formatted:", formatted);
+  return;
+}
+
 
     // ========== MEMBER MODE ==========
-    if (allocationOption === "Member" && distributionOption === "Account") {
-      res = await axios.get(`${API_BASE}/filter/accounts/${selectedAccount}`);
-      nameField = "account_name";
-    } 
-    else if (allocationOption === "Member" && distributionOption === "Asset Class") {
-      res = await axios.get(`${API_BASE}/filter/assetclass/${selectedAccount}/${rowName}`);
-      nameField = "asset_class";
+    // if (allocationOption === "Member" && distributionOption === "Account") {
+    //   res = await axios.get(`${API_BASE}/filter/accounts/${selectedAccount}`);
+    //   nameField = "account_name";
+    // } 
+  if (allocationOption === "Account" && distributionOption === "Asset Class") {
+
+  const clientId = localStorage.getItem("client");
+  res = await axios.get(`${API_BASE}/account-asset/${clientId}/${rowName}`);
+
+  console.log("Account → Asset Response:", res.data);
+
+  const formatted = res.data.map(item => ({
+    Name: item.asset_class ?? "—",
+
+    "Today Total": item.today_total ?? "—",
+    "Yesterday Total": item.yesterday_total ?? "—",
+    "Daily Return %": item.daily_return ?? "—",
+
+    "1W value": item["1w_value"] ?? "—",
+    "1W Return %": item["1w_return"] ?? "—",
+    "1M Value": item["1m_value"] ?? "—",
+    "1M Return %": item["1m_return"] ?? "—",
+    "3M Value": item["3m_value"] ?? "—",
+    "3M Return %": item["3m_return"] ?? "—",
+    "6M Value": item["6m_value"] ?? "—",
+    "6M Return %": item["6m_return"] ?? "—",
+    "MTD Value": item.mtd_value ?? "—",
+    "MTD Return %": item.mtd_return ?? "—",
+    "FYTD Value": item.fytd_value ?? "—",
+    "FYTD Return %": item.fytd_return ?? "—",
+  }));
+
+  setColumns(Object.keys(formatted[0]));
+  setSubData(prev => ({
+    ...prev,
+    [rowName]: formatted
+  }));
+
+  return;
+}
+
+
+
+
+    
+    else if (allocationOption === "Account" && distributionOption === "Sub Asset Class") {
+     try {
+   const clientId = localStorage.getItem("client");
+const res = await axios.get(`${API_BASE}/account/sub-asset/${clientId}/${rowName}`);
+
+
+    console.log("Sub-Asset API Response:", res.data);
+
+    const formatted = res.data.map(item => ({
+      Name: item.sub_asset_class ?? item.sub_asset ?? item.asset_class_2,
+      "Today Total": item.today_total ?? "—",
+       "Yesterday Total": item.yesterday_total ?? "—",
+      "Daily Return %": item.daily_return ?? "—",
+      "1W value": item["1w_value"] ?? "—",
+      "1W Return %": item["1w_return"] ?? "—",
+      "1M Value": item["1m_value"] ?? "—",
+      "1M Return %": item["1m_return"] ?? "—",
+      "3M Value": item["3m_value"] ?? "—",
+      "3M Return %": item["3m_return"] ?? "—",
+      "6M Value": item["6m_value"] ?? "—",
+      "6M Return %": item["6m_return"] ?? "—",
+      "MTD Value": item.mtd_value ?? "—",
+      "MTD Return %": item.mtd_return ?? "—",
+      "FYTD Value": item.fytd_value ?? "—",
+      "FYTD Return %": item.fytd_return ?? "—",
+    }));
+
+    if (formatted.length > 0) {
+      setColumns(Object.keys(formatted[0]));
     }
-    else if (allocationOption === "Member" && distributionOption === "Sub Asset Class") {
-      res = await axios.get(`${API_BASE}/filter/subassetclass/${selectedAccount}/${rowName}`);
-      nameField = "sub_asset_class";
-    }
+
+    setSubData(prev => ({
+      ...prev,
+      [rowName]: formatted
+    }));
+
+  } catch (error) {
+    console.error("Sub Asset API Error:", error);
+  }
+
+  return;
+}
+
+    
 
     // ========== ASSET CLASS MODE ==========
    else if (allocationOption === "Asset Class" && distributionOption === "Account") {
-  res = await axios.get(`${API_BASE}/asset-summary/${pan}`);
+    
+     const clientId = localStorage.getItem("client"); // <-- FIX
+
+  res = await axios.get(`${API_BASE}/asset-summary/${clientId}`);
 
   //  API response is grouped by asset classes
   const grouped = res.data;
@@ -162,53 +353,60 @@ const handleExpand = async (rowName) => {
   const accountsForAsset = grouped[selectedAssetClass] || [];
 
   //  Transform format for Table
-  const transformed = accountsForAsset.map((acc) => ({
-    Name: acc.account_name,
-    "Today Total": acc.today_total ?? "—",
-    "Daily Return %": acc.daily_return ?? "—",
-    "1W Return %": acc["1w_return"] ?? "—",
-    "1M Return %": acc["1m_return"] ?? "—",
-    "3M Return %": acc["3m_return"] ?? "—",
-    "6M Return %": acc["6m_return"] ?? "—",
-    "MTD Return %": acc.mtd_return ?? "—",
-    "FYTD Return %": acc.fytd_return ?? "—",
-  }));
+const transformed = accountsForAsset.map((acc) => ({
+  Name: acc.account_name,
+  "Today Total": acc.today_total ?? "—",
+   "Yesterday Total": acc.yesterday_total ?? "—",
+  "Daily Return %": acc.daily_return ?? "—",
+  "1W value": acc["1w_value"] ?? "—",   // <-- FIXED
+  "1W Return %": acc["1w_return"] ?? "—",
+  "1M Value": acc["1m_value"] ?? "—",
+  "1M Return %": acc["1m_return"] ?? "—",
+  "3M Value": acc["3m_value"] ?? "—",
+  "3M Return %": acc["3m_return"] ?? "—",
+  "6M Value": acc["6m_value"] ?? "—",
+  "6M Return %": acc["6m_return"] ?? "—",
+  "MTD Value": acc.mtd_value ?? "—",
+  "MTD Return %": acc.mtd_return ?? "—",
+  "FYTD Value": acc.fytd_value ?? "—",
+  "FYTD Return %": acc.fytd_return ?? "—",
+}));
+
 
   setSubData((prev) => ({ ...prev, [rowName]: transformed }));
   return; 
 }
 
   else if (allocationOption === "Asset Class" && distributionOption === "Sub Asset Class") {
-
   try {
-    // Step 1: Correct API Call
-    const res = await axios.get(`${API_BASE}/filter/${pan}/${rowName}`);
+    const clientId = localStorage.getItem("client");
+    const res = await axios.get(`${API_BASE}/filter/${clientId}/${rowName}`);
 
     console.log("Sub-Asset API Response:", res.data);
 
-    // Step 2: Transform response for table display including all columns
     const formatted = res.data.map(item => ({
       Name: item.sub_asset_class ?? item.sub_asset ?? item.asset_class_2,
       "Today Total": item.today_total ?? "—",
-      // "Yesterday Total": item.yesterday_total ?? item.yesterday_date ?? "—",
-      "Daily Return %": item.daily_return_pct ?? item.daily_return ?? "—",
-      // "3D Return %": item["3d_return"] ?? "—",
-      "1W Return %": item["1w_return"] ?? item["1w_return"] ?? "—",
-      "1M Return %": item["1m_return"] ?? item["1m_return"] ?? "—",
-      "3M Return %": item["3m_return"] ?? item["3m_return"] ?? "—",
-      "6M Return %": item["6m_return"] ?? item["6m_return"] ?? "—",
-      "MTD Return %": item.mtd_return ?? item.mtd_return ?? "—",
-      "FYTD Return %": item.fytd_return ?? item.fytd_return ?? "—",
-
-      // Metadata for next level (if needed later)
-      // isSubAsset: true,
-      // parentAsset: rowName
+         "Yesterday Total": item.yesterday_total ?? "—",
+      "Daily Return %": item.daily_return ?? "—",
+      "1W value": item["1w_value"] ?? "—",
+      "1W Return %": item["1w_return"] ?? "—",
+      "1M Value": item["1m_value"] ?? "—",
+      "1M Return %": item["1m_return"] ?? "—",
+      "3M Value": item["3m_value"] ?? "—",
+      "3M Return %": item["3m_return"] ?? "—",
+      "6M Value": item["6m_value"] ?? "—",
+      "6M Return %": item["6m_return"] ?? "—",
+      "MTD Value": item.mtd_value ?? "—",
+      "MTD Return %": item.mtd_return ?? "—",
+      "FYTD Value": item.fytd_value ?? "—",
+      "FYTD Return %": item.fytd_return ?? "—",
     }));
 
-    // Step 3: Update Columns dynamically based on the formatted data
-    setColumns(Object.keys(formatted[0]));
+    if (formatted.length > 0) {
+      setColumns(Object.keys(formatted[0]));
+    }
 
-    // Step 4: Store result under expanded row
     setSubData(prev => ({
       ...prev,
       [rowName]: formatted
@@ -243,7 +441,15 @@ const handleExpand = async (rowName) => {
   } catch (err) {
     console.error("Expand API Error:", err);
   }
+
+
+
 };
+
+
+
+
+
 
   const formatValue = (v, isCurrency = false) => {
     if (v === null || v === undefined) return "—";
@@ -337,7 +543,27 @@ const handleExpand = async (rowName) => {
         </tr>
       </thead>
 
-      <tbody>
+<tbody>
+  {/* 🔥 Always visible Summary Row (no click, always open) */}
+{subData["Summary View"]?.[0] && (
+  <tr className="sticky top-0 z-50 bg-yellow-50 dark:bg-[#2f2f0a] font-semibold border-b border-gray-300 dark:border-[#333]">
+    {columns.map((col, i) => (
+      <td key={i} className="px-6 py-4 text-gray-900 dark:text-gray-200 whitespace-nowrap">
+        {i === 0 
+          ? subData["Summary View"][0]?.Name || "—"
+          : (
+              col.toLowerCase().includes("value") || col.includes("Total")
+                ? formatValue(subData["Summary View"][0][col], true)
+                : !isNaN(subData["Summary View"][0][col])
+                ? Number(subData["Summary View"][0][col]).toFixed(2)
+                : (subData["Summary View"][0][col] ?? "—")
+            )
+        }
+      </td>
+    ))}
+  </tr>
+)}
+
   {data.map((row) => (
     <React.Fragment key={row.Name}>
       <tr
@@ -350,13 +576,16 @@ const handleExpand = async (rowName) => {
               <div className="flex items-center gap-2 font-medium">
                 <ExpandArrow open={expanded === row.Name} /> {row[col]}
               </div>
-            ) : col === "Today Total" ? (
-              formatValue(row[col], true)  // ✔ stay exactly same
-            ) : (
+            ) : 
+              // 🟢 currency/value fields
+              col.toLowerCase().includes("value") || col === "Today Total" || col === "Yesterday Total"
+                ? formatValue(row[col], true)
+                :
+              // 🟠 return fields
               !isNaN(row[col]) && row[col] !== null && row[col] !== ""
-                ? Number(row[col]).toFixed(2)  // ✔ apply 2 decimals
+                ? Number(row[col]).toFixed(2)
                 : (row[col] ?? "—")
-            )}
+            }
           </td>
         ))}
       </tr>
@@ -368,13 +597,16 @@ const handleExpand = async (rowName) => {
               <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                 {i3 === 0 ? (
                   <span className="pl-10">{sub[col]}</span>
-                ) : col === "Today Total" ? (
-                  formatValue(sub[col], true) // ✔ same here
-                ) : (
+                ) :
+                  // 🟢 Currency/value columns
+                  col.toLowerCase().includes("value") || col === "Today Total" || col === "Yesterday Total"
+                    ? formatValue(sub[col], true)
+                    :
+                  // 🟠 return columns format with decimals
                   !isNaN(sub[col]) && sub[col] !== null && sub[col] !== ""
                     ? Number(sub[col]).toFixed(2)
                     : (sub[col] ?? "—")
-                )}
+                }
               </td>
             ))}
           </tr>
@@ -382,6 +614,9 @@ const handleExpand = async (rowName) => {
     </React.Fragment>
   ))}
 </tbody>
+
+
+
 
     </table>
 

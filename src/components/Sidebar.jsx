@@ -69,14 +69,14 @@ const filteredPanList = panList.filter(item =>
 useEffect(() => {
   const fetchPanList = async () => {
     try {
-      const panId = localStorage.getItem("pan");
+      const clientId = localStorage.getItem("client");
 
-      if (!panId) {
+      if (!clientId) {
         console.warn(" No account id found in localStorage");
         return;
       }
 
-      const res = await axios.get(`https://optimizalphabackend.onrender.com/api/pan-list/${panId}`, {
+      const res = await axios.get(`https://optimizalphabackend.onrender.com/api/pan-list/${clientId}`, {
         withCredentials: true,
       });
 

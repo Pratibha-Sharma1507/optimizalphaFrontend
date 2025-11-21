@@ -4,6 +4,7 @@ import { useOutletContext } from "react-router-dom";
 import AllocationPerformance from "../components/AllocationPerformance";
 import  DeltaVisionAssetClassChart from "../components/DeltaVisionWithFilters";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import PerformanceVsBenchmark from "../components/PerformanceVsBenchmark";
 import {
   BarChart,
   Bar,
@@ -71,7 +72,7 @@ const fetchPortfolios = async () => {
   try {
     setLoading(true);
 
-    const panId = localStorage.getItem("pan");
+    const clientId = localStorage.getItem("client");
 
     let url = "";
 
@@ -79,7 +80,7 @@ const fetchPortfolios = async () => {
     if (selectedPan === "All") {
       url = `${API_ENDPOINT}?currency=${currency}`;
     } else {
-      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${panId}/${selectedPan}?currency=${currency}`;
+      url = `https://optimizalphabackend.onrender.com/api/pan-summary/${clientId}/${selectedPan}?currency=${currency}`;
     }
 
     console.log(" API Running:", url);
@@ -120,13 +121,13 @@ useEffect(() => {
   const topStatsKeys = ["today_total"];
 
   const horizontalItems = [
-      { title: "Daily", key: "daily_return" },
-       { title: "1-Week", key: "1w_return" },
-        { title: "1-Month ", key: "1m_return" },
-          { title: "3-Month ", key: "3m_return" },
-            { title: "6-Month", key: "6m_return" },
-      { title: "MTD", key: "mtd_return" },
-      { title: "FYTD", key: "fytd_return" },
+       { title: "Daily", returnKey: "daily_return"},
+    { title: "1-Week", returnKey: "1w_return", valueKey: "1w_value" },
+    { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
+    { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
+    { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
+    { title: "MTD", returnKey: "mtd_return", valueKey: "mtd_value" },
+    { title: "FYTD", returnKey: "fytd_return", valueKey: "fytd_value" },
   ];
 
 const formatValue = (v, isCurrency = false) => {
@@ -141,12 +142,21 @@ const formatValue = (v, isCurrency = false) => {
   if (!isCurrency) return n.toLocaleString(locale);
 
   //  Unit logic for INR
-  if (currency === "INR") {
-    if (n >= 10000000) return `${symbol}${(n / 10000000).toFixed(2)}Cr`;
-    if (n >= 100000) return `${symbol}${(n / 100000).toFixed(2)}L`;
-    if (n >= 1000) return `${symbol}${(n / 1000).toFixed(2)}K`;
-    return `${symbol}${n.toLocaleString(locale)}`;
+ if (currency === "INR") {
+  if (n >= 10000000) {
+    const cr = n / 10000000;
+    return `${symbol}${Number(cr.toPrecision(4)).toFixed(2)}Cr`;
   }
+  if (n >= 100000) {
+    const lakh = n / 100000;
+    return `${symbol}${Number(lakh.toPrecision(4)).toFixed(2)}L`;
+  }
+  if (n >= 1000) {
+    const k = n / 1000;
+    return `${symbol}${Number(k.toPrecision(4)).toFixed(2)}K`;
+  }
+  return `${symbol}${n.toLocaleString(locale)}`;
+}
 
   //  Unit logic for USD
   if (currency === "USD") {
@@ -213,7 +223,6 @@ const formatValue = (v, isCurrency = false) => {
 
       {/* HORIZONTAL SCROLLABLE CARDS */}
    
-
 <div className="relative mb-8 md:mb-12">
   {/* Left scroll button */}
   <button
@@ -222,14 +231,7 @@ const formatValue = (v, isCurrency = false) => {
     }
     className="hidden sm:block absolute -left-4 top-1/2 -translate-y-1/2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white p-2 rounded-full z-10"
   >
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M10 4L6 8l4 4" />
     </svg>
   </button>
@@ -240,63 +242,61 @@ const formatValue = (v, isCurrency = false) => {
     className="flex overflow-x-auto gap-3 scrollbar-hide scroll-smooth px-1"
   >
     {horizontalItems.map((item, i) => {
-      const rawValue = first[item.key];
-      const numericValue = rawValue != null ? Number(rawValue) : null;
-      const isNegative = numericValue < 0;
+      const returnValue = item.returnKey ? first[item.returnKey] : null;
+      const numericReturn = returnValue != null ? Number(returnValue) : null;
+      const value = item.valueKey ? first[item.valueKey] : null;
+
+      const isNegative = numericReturn < 0;
       const lineColor = isNegative ? "#ef4444" : "#22c55e";
 
-      // Small random/simulated trend line (you can replace with real trend data)
-      const trendData = Array.from({ length: 8 }, (_, j) => ({
-        value:
-          numericValue +
-          (Math.random() - 0.5) * (isNegative ? 0.6 : 0.4),
+      const trendData = Array.from({ length: 8 }, () => ({
+        value: numericReturn + (Math.random() - 0.5) * 0.4,
       }));
 
       return (
         <div
           key={i}
-          className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[180px] sm:min-w-[200px] flex-shrink-0 shadow-sm hover:shadow-md transition"
+          className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[200px] sm:min-w-[220px] flex-shrink-0 shadow-sm hover:shadow-md transition"
         >
           {/* Title */}
-          <p className="text-[10px] text-gray-500 dark:text-neutral-500 uppercase">
+          <p className="text-[10px] text-gray-500 dark:text-neutral-500 uppercase mb-2">
             {item.title}
           </p>
 
-          {/* Value + line */}
-          <div className="flex items-center justify-between mt-1">
-            {/* Value */}
-            <h3
-              className={`text-xl font-bold ${
-                isNegative ? "text-red-400" : "text-green-400"
-              }`}
-            >
-             {numericValue != null && !isNaN(numericValue)
-      ? `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}%`
-      : "—"}
-            </h3>
+          {/* LEFT + RIGHT */}
+          <div className="flex items-center justify-between">
 
-            {/*  Small right-side sparkline */}
-            <div className="w-[55px] h-[24px]">
+            {/* LEFT: RETURN + VALUE */}
+            <div className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
+
+              {/* Return */}
+              <span>
+                Return {" "}
+                <span className={`font-semibold ${isNegative ? "text-red-500" : "text-green-500"}`}>
+                  {numericReturn != null ? `${numericReturn > 0 ? "+" : ""}${numericReturn.toFixed(2)}%` : "—"}
+                </span>
+              </span>
+
+              {/* Value (only if exists) */}
+              {value != null && (
+                <span>
+                  Value {" "}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                  {value != null ? formatValue(value, true) : "—"}
+
+                  </span>
+                </span>
+              )}
+            </div>
+
+            {/* RIGHT: SPARKLINE */}
+            <div className="w-[60px] h-[26px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
                   <defs>
-                    <linearGradient
-                      id={`gradient-${i}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor={lineColor}
-                        stopOpacity={0.4}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor={lineColor}
-                        stopOpacity={0}
-                      />
+                    <linearGradient id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={lineColor} stopOpacity={0.4} />
+                      <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <Area
@@ -306,7 +306,6 @@ const formatValue = (v, isCurrency = false) => {
                     fill={`url(#gradient-${i})`}
                     strokeWidth={2}
                     dot={false}
-                    animationDuration={1000}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -324,18 +323,12 @@ const formatValue = (v, isCurrency = false) => {
     }
     className="hidden sm:block absolute -right-4 top-1/2 -translate-y-1/2 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-white p-2 rounded-full z-10"
   >
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M6 4l4 4-4 4" />
     </svg>
   </button>
 </div>
+
 
   <AllocationPerformance></AllocationPerformance>
   < DeltaVisionAssetClassChart />
@@ -347,7 +340,7 @@ const formatValue = (v, isCurrency = false) => {
       {/* PERFORMANCE VS BENCHMARK + SNAPSHOT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-12">
         {/* Left: Performance vs Benchmark */}
-        <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
+        {/* <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
           <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance vs Benchmark</h2>
           <div className="w-full h-[250px] sm:h-[280px] md:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -371,7 +364,9 @@ const formatValue = (v, isCurrency = false) => {
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </div> */}
+
+        <PerformanceVsBenchmark/>
 
         {/* Right: Performance Snapshot */}
         <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
