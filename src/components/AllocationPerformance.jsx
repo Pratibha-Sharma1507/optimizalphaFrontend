@@ -92,20 +92,20 @@ useEffect(() => {
 
       const formatted = res.data.map(item => ({
         Name: item.client_no,
-        "Today Total": item.today_total ?? "—",
-        "Yesterday Total": item.yesterday_total ?? "—",
+        "Portfolio Value": item.today_total ?? "—",
+        // "Yesterday Total": item.yesterday_total ?? "—",
         "Daily Return %": item.daily_return ?? "—",
-        "1W value": item["1w_value"] ?? "—",
+        // "1W value": item["1w_value"] ?? "—",
         "1W Return %": item["1w_return"] ?? "—",
-        "1M Value": item["1m_value"] ?? "—",
+        // "1M Value": item["1m_value"] ?? "—",
         "1M Return %": item["1m_return"] ?? "—",
-        "3M Value": item["3m_value"] ?? "—",
+        // "3M Value": item["3m_value"] ?? "—",
         "3M Return %": item["3m_return"] ?? "—",
-        "6M Value": item["6m_value"] ?? "—",
+        // "6M Value": item["6m_value"] ?? "—",
         "6M Return %": item["6m_return"] ?? "—",
-        "MTD Value": item.mtd_value ?? "—",
+        // "MTD Value": item.mtd_value ?? "—",
         "MTD Return %": item.mtd_return ?? "—",
-        "FYTD Value": item.fytd_value ?? "—",
+        // "FYTD Value": item.fytd_value ?? "—",
         "FYTD Return %": item.fytd_return ?? "—",
       }));
 
@@ -142,20 +142,20 @@ useEffect(() => {
     ? item.account_name
     : (item.asset_class || item.account_name),
 
-  "Today Total": item.today_total ?? "—",
-  "Yesterday Total": item.yesterday_total ?? "—",
+  "Portfolio Value": item.today_total ?? "—",
+  // "Yesterday Total": item.yesterday_total ?? "—",
   "Daily Return %": item.daily_return ?? "—",
-  "1W value": item["1w_value"] ?? "—",
+  // "1W value": item["1w_value"] ?? "—",
   "1W Return %": item["1w_return"] ?? "—",
-  "1M Value": item["1m_value"] ?? "—",
+  // "1M Value": item["1m_value"] ?? "—",
   "1M Return %": item["1m_return"] ?? "—",
-  "3M Value": item["3m_value"] ?? "—",
+  // "3M Value": item["3m_value"] ?? "—",
   "3M Return %": item["3m_return"] ?? "—",
-  "6M Value": item["6m_value"] ?? "—",
+  // "6M Value": item["6m_value"] ?? "—",
   "6M Return %": item["6m_return"] ?? "—",
-  "MTD Value": item.mtd_value ?? "—",
+  // "MTD Value": item.mtd_value ?? "—",
   "MTD Return %": item.mtd_return ?? "—",
-  "FYTD Value": item.fytd_value ?? "—",
+  // "FYTD Value": item.fytd_value ?? "—",
   "FYTD Return %": item.fytd_return ?? "—",
 }));
 
@@ -210,26 +210,26 @@ const handleExpand = async (rowName) => {
   const formatted = res.data.map(item => ({
     Name: item.client_no || "—",
 
-    "Today Total": item.today_total ?? "—",
-    "Yesterday Total": item.yesterday_total ?? "—",
+    "Portfolio Value": item.today_total ?? "—",
+    // "Yesterday Total": item.yesterday_total ?? "—",
     "Daily Return %": item.daily_return ?? "—",
 
-    "1W Value": item["1w_value"] ?? "—",
+    // "1W Value": item["1w_value"] ?? "—",
     "1W Return %": item["1w_return"] ?? "—",
 
-    "1M Value": item["1m_value"] ?? "—",
+    // "1M Value": item["1m_value"] ?? "—",
     "1M Return %": item["1m_return"] ?? "—",
 
-    "3M Value": item["3m_value"] ?? "—",
+    // "3M Value": item["3m_value"] ?? "—",
     "3M Return %": item["3m_return"] ?? "—",
 
-    "6M Value": item["6m_value"] ?? "—",
+    // "6M Value": item["6m_value"] ?? "—",
     "6M Return %": item["6m_return"] ?? "—",
 
-    "MTD Value": item.mtd_value ?? "—",
+    // "MTD Value": item.mtd_value ?? "—",
     "MTD Return %": item.mtd_return ?? "—",
 
-    "FYTD Value": item.fytd_value ?? "—",
+    // "FYTD Value": item.fytd_value ?? "—",
     "FYTD Return %": item.fytd_return ?? "—",
   }));
 
@@ -260,21 +260,21 @@ const handleExpand = async (rowName) => {
   const formatted = res.data.map(item => ({
     Name: item.asset_class ?? "—",
 
-    "Today Total": item.today_total ?? "—",
-    "Yesterday Total": item.yesterday_total ?? "—",
+    "Portfolio Value": item.today_total ?? "—",
+    // "Yesterday Total": item.yesterday_total ?? "—",
     "Daily Return %": item.daily_return ?? "—",
 
-    "1W value": item["1w_value"] ?? "—",
+    // "1W value": item["1w_value"] ?? "—",
     "1W Return %": item["1w_return"] ?? "—",
-    "1M Value": item["1m_value"] ?? "—",
+    // "1M Value": item["1m_value"] ?? "—",
     "1M Return %": item["1m_return"] ?? "—",
-    "3M Value": item["3m_value"] ?? "—",
+    // "3M Value": item["3m_value"] ?? "—",
     "3M Return %": item["3m_return"] ?? "—",
-    "6M Value": item["6m_value"] ?? "—",
+    // "6M Value": item["6m_value"] ?? "—",
     "6M Return %": item["6m_return"] ?? "—",
-    "MTD Value": item.mtd_value ?? "—",
+    // "MTD Value": item.mtd_value ?? "—",
     "MTD Return %": item.mtd_return ?? "—",
-    "FYTD Value": item.fytd_value ?? "—",
+    // "FYTD Value": item.fytd_value ?? "—",
     "FYTD Return %": item.fytd_return ?? "—",
   }));
 
@@ -301,20 +301,20 @@ const res = await axios.get(`${API_BASE}/account/sub-asset/${clientId}/${rowName
 
     const formatted = res.data.map(item => ({
       Name: item.sub_asset_class ?? item.sub_asset ?? item.asset_class_2,
-      "Today Total": item.today_total ?? "—",
-       "Yesterday Total": item.yesterday_total ?? "—",
+      "Portfolio Value": item.today_total ?? "—",
+      //  "Yesterday Total": item.yesterday_total ?? "—",
       "Daily Return %": item.daily_return ?? "—",
-      "1W value": item["1w_value"] ?? "—",
+      // "1W value": item["1w_value"] ?? "—",
       "1W Return %": item["1w_return"] ?? "—",
-      "1M Value": item["1m_value"] ?? "—",
+      // "1M Value": item["1m_value"] ?? "—",
       "1M Return %": item["1m_return"] ?? "—",
-      "3M Value": item["3m_value"] ?? "—",
+      // "3M Value": item["3m_value"] ?? "—",
       "3M Return %": item["3m_return"] ?? "—",
-      "6M Value": item["6m_value"] ?? "—",
+      // "6M Value": item["6m_value"] ?? "—",
       "6M Return %": item["6m_return"] ?? "—",
-      "MTD Value": item.mtd_value ?? "—",
+      // "MTD Value": item.mtd_value ?? "—",
       "MTD Return %": item.mtd_return ?? "—",
-      "FYTD Value": item.fytd_value ?? "—",
+      // "FYTD Value": item.fytd_value ?? "—",
       "FYTD Return %": item.fytd_return ?? "—",
     }));
 
@@ -355,20 +355,20 @@ const res = await axios.get(`${API_BASE}/account/sub-asset/${clientId}/${rowName
   //  Transform format for Table
 const transformed = accountsForAsset.map((acc) => ({
   Name: acc.account_name,
-  "Today Total": acc.today_total ?? "—",
-   "Yesterday Total": acc.yesterday_total ?? "—",
+  "Portfolio Value": acc.today_total ?? "—",
+  //  "Yesterday Total": acc.yesterday_total ?? "—",
   "Daily Return %": acc.daily_return ?? "—",
-  "1W value": acc["1w_value"] ?? "—",   // <-- FIXED
+  // "1W value": acc["1w_value"] ?? "—",   // <-- FIXED
   "1W Return %": acc["1w_return"] ?? "—",
-  "1M Value": acc["1m_value"] ?? "—",
+  // "1M Value": acc["1m_value"] ?? "—",
   "1M Return %": acc["1m_return"] ?? "—",
-  "3M Value": acc["3m_value"] ?? "—",
+  // "3M Value": acc["3m_value"] ?? "—",
   "3M Return %": acc["3m_return"] ?? "—",
-  "6M Value": acc["6m_value"] ?? "—",
+  // "6M Value": acc["6m_value"] ?? "—",
   "6M Return %": acc["6m_return"] ?? "—",
-  "MTD Value": acc.mtd_value ?? "—",
+  // "MTD Value": acc.mtd_value ?? "—",
   "MTD Return %": acc.mtd_return ?? "—",
-  "FYTD Value": acc.fytd_value ?? "—",
+  // "FYTD Value": acc.fytd_value ?? "—",
   "FYTD Return %": acc.fytd_return ?? "—",
 }));
 
@@ -386,20 +386,20 @@ const transformed = accountsForAsset.map((acc) => ({
 
     const formatted = res.data.map(item => ({
       Name: item.sub_asset_class ?? item.sub_asset ?? item.asset_class_2,
-      "Today Total": item.today_total ?? "—",
-         "Yesterday Total": item.yesterday_total ?? "—",
+      "Portfolio Value": item.today_total ?? "—",
+        //  "Yesterday Total": item.yesterday_total ?? "—",
       "Daily Return %": item.daily_return ?? "—",
-      "1W value": item["1w_value"] ?? "—",
+      // "1W value": item["1w_value"] ?? "—",
       "1W Return %": item["1w_return"] ?? "—",
-      "1M Value": item["1m_value"] ?? "—",
+      // "1M Value": item["1m_value"] ?? "—",
       "1M Return %": item["1m_return"] ?? "—",
-      "3M Value": item["3m_value"] ?? "—",
+      // "3M Value": item["3m_value"] ?? "—",
       "3M Return %": item["3m_return"] ?? "—",
-      "6M Value": item["6m_value"] ?? "—",
+      // "6M Value": item["6m_value"] ?? "—",
       "6M Return %": item["6m_return"] ?? "—",
-      "MTD Value": item.mtd_value ?? "—",
+      // "MTD Value": item.mtd_value ?? "—",
       "MTD Return %": item.mtd_return ?? "—",
-      "FYTD Value": item.fytd_value ?? "—",
+      // "FYTD Value": item.fytd_value ?? "—",
       "FYTD Return %": item.fytd_return ?? "—",
     }));
 
@@ -428,7 +428,7 @@ const transformed = accountsForAsset.map((acc) => ({
     const transformed = res.data.map((item) => ({
       Name: item[nameField] || item.sub_asset_class || item.asset_class || item.account_name || item.pan_no,
       "Today Total": item.today_total ?? "—",
-      "Yesterday Total": item.yesterday_total ?? "—",
+      // "Yesterday Total": item.yesterday_total ?? "—",
       "Daily Return %": item.daily_return_pct ?? "—",
       "3D Return %": item["3d_return_pct"] ?? "—",
       "1W Return %": item["1w_return_pct"] ?? "—",

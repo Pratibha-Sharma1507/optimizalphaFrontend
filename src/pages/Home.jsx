@@ -135,7 +135,7 @@ useEffect(() => {
     topStatsKeys: ["today_total"],
     horizontalItems: [
     { title: "Daily", returnKey: "daily_return"},
-    { title: "1-Week", returnKey: "1w_return", valueKey: "1w_value" },
+    { title: "1-Week", returnKey: "1w_return" },
     { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
     { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
     { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
@@ -311,13 +311,28 @@ const horizontalCardsData = useMemo(() => {
  
 {/* Horizontal Cards */}
 <div className="relative mb-6 md:mb-8">
+
+  {/* LEFT BUTTON */}
+<button
+  onClick={() => scrollRef.current.scrollBy({ left: -250, behavior: "smooth" })}
+  className="absolute -left-[3px] top-1/2 -translate-y-1/2 z-10 
+  bg-white dark:bg-[#222] shadow-md border border-gray-300 dark:border-neutral-700 
+  w-8 h-8 rounded-full flex items-center justify-center hover:scale-105 transition"
+>
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M10 4L6 8l4 4" />
+  </svg>
+</button>
+
+
+
+  {/* SCROLLABLE CARDS */}
   <div
     ref={scrollRef}
-    className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth px-1"
+    className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth px-5"
   >
     {horizontalCardsData.map((item, i) => {
       const lineColor = item.isNegative ? "#ef4444" : "#22c55e";
-
       const trendData = item.trendData || Array.from({ length: 10 }, () => ({
         value: item.numericValue + (Math.random() - 0.5) * 0.4,
       }));
@@ -333,13 +348,11 @@ const horizontalCardsData = useMemo(() => {
             {item.title}
           </p>
 
-          {/* CONTENT WRAPPER: RETURN + VALUE LEFT | SPARKLINE RIGHT */}
+          {/* CONTENT WRAPPER */}
           <div className="flex items-center justify-between gap-3">
-            
-            {/* LEFT: Values */}
             <div className="text-[13px] font-medium flex flex-col gap-1 text-gray-600 dark:text-gray-400">
               
-              {/* Row — Return */}
+              {/* Return */}
               <div className="flex items-center justify-between w-[120px]">
                 <span className="opacity-75">Return</span>
                 <span
@@ -352,26 +365,20 @@ const horizontalCardsData = useMemo(() => {
                 </span>
               </div>
 
-              {/* Row — Value */}
-              <div className="flex items-center justify-between w-[120px]">
-                {item.value !== null && (
-  <div className="flex items-center justify-between w-[120px]">
-    <span className="opacity-75">Value</span>
-    <span className="font-semibold text-gray-900 dark:text-white">
-  {item.value !== null 
-        ? formatValue(Number(item.value), true) 
-        : "—"}
-
-
-
-    </span>
-  </div>
-)}
-
-              </div>
+              {/* Value */}
+              {item.value !== null && (
+                <div className="flex items-center justify-between w-[120px]">
+                  <span className="opacity-75">Value</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {item.value !== null
+                      ? formatValue(Number(item.value), true)
+                      : "—"}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* RIGHT: Sparkline SAME ROW */}
+            {/* Sparkline */}
             <div className="w-[80px] h-[30px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
@@ -398,6 +405,18 @@ const horizontalCardsData = useMemo(() => {
       );
     })}
   </div>
+
+  {/* RIGHT BUTTON */}
+ <button
+  onClick={() => scrollRef.current.scrollBy({ left: 250, behavior: "smooth" })}
+  className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 
+  bg-white dark:bg-[#222] shadow-md border border-gray-300 dark:border-neutral-700 
+  w-8 h-8 rounded-full flex items-center justify-center hover:scale-105 transition"
+>
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M6 4l4 4-4 4" />
+  </svg>
+</button>
 </div>
 
 

@@ -190,44 +190,39 @@ export default function DeltaVisionAssetClassChart() {
         {hasData ? (
          <ResponsiveContainer width="100%" height="100%">
   <BarChart
-    data={chartData}
-    margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
-
-    // --- FIX FOR SINGLE ENTITY ---
-    barCategoryGap={selectedView === "Entity" ? "70%" : "20%"}
-    barGap={selectedView === "Entity" ? 5 : 10}
-    barSize={selectedView === "Entity" ? 38 : undefined} 
-  >
-    <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
-    <XAxis
-      dataKey="name"
-      stroke="#9ca3af"
-      tick={{ fontSize: 12, fill: "#9ca3af" }}
-      height={40}
-    />
-    <YAxis
-  stroke="#9ca3af"
-  tick={{ fontSize: 12, fill: "#9ca3af" }}
-  tickFormatter={(v) =>
-    new Intl.NumberFormat("en-IN", {
-      maximumFractionDigits: 2,
-    }).format(v)
-  }
+  data={chartData}
+  margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
+  barCategoryGap={selectedView === "Entity" ? "70%" : "20%"}
+  barGap={selectedView === "Entity" ? 5 : 10}
+  barSize={selectedView === "Entity" ? 38 : undefined}
+  activeBar={false}
+>
+  <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
+  <XAxis dataKey="name" />
+  <YAxis />
+<Tooltip
+  cursor={{ fill: "rgba(255,255,255,0.05)" }}   // <-- VERY SOFT HOVER EFFECT
+  contentStyle={{
+    backgroundColor: "#1f1f1f",
+    borderRadius: "8px",
+    border: "1px solid #333",
+  }}
+  itemStyle={{ color: "#fff", fontWeight: 600 }}
+  labelStyle={{ color: "#fff" }}
 />
 
-    <Tooltip formatter={(v) => `${v.toFixed(2)}%`} />
-    <Legend wrapperStyle={{ fontSize: "12px", color: "#fff" }} />
+  <Legend />
 
-    {selectedPeriods.map((period, i) => (
-      <Bar
-        key={period}
-        dataKey={period}
-        fill={barColors[i % barColors.length]}
-        radius={[6, 6, 0, 0]}
-        animationDuration={800}
-      />
-    ))}
-  </BarChart>
+  {selectedPeriods.map((period, i) => (
+    <Bar
+      key={period}
+      dataKey={period}
+      fill={barColors[i % barColors.length]}
+      radius={[6, 6, 0, 0]}
+    />
+  ))}
+</BarChart>
+
 </ResponsiveContainer>
 
         ) : (

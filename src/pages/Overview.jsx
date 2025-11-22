@@ -5,6 +5,7 @@ import AllocationPerformance from "../components/AllocationPerformance";
 import  DeltaVisionAssetClassChart from "../components/DeltaVisionWithFilters";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import PerformanceVsBenchmark from "../components/PerformanceVsBenchmark";
+import DrilldownPieChart from '../components/DrilldownPieChart';
 import {
   BarChart,
   Bar,
@@ -122,7 +123,7 @@ useEffect(() => {
 
   const horizontalItems = [
        { title: "Daily", returnKey: "daily_return"},
-    { title: "1-Week", returnKey: "1w_return", valueKey: "1w_value" },
+    { title: "1-Week", returnKey: "1w_return" },
     { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
     { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
     { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
@@ -369,7 +370,7 @@ const formatValue = (v, isCurrency = false) => {
         <PerformanceVsBenchmark/>
 
         {/* Right: Performance Snapshot */}
-        <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
+        {/* <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
           <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance Snapshot</h2>
           <div className="w-full h-[250px] sm:h-[280px] md:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -400,7 +401,9 @@ const formatValue = (v, isCurrency = false) => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </div> */}
+
+        <DrilldownPieChart/>
       </div>
 
       {/* PORTFOLIO DRAWDOWN + RISK METRICS */}
