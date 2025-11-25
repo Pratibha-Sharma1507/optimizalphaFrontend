@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import {
   ResponsiveContainer,
   BarChart,
@@ -11,223 +12,159 @@ import {
 } from "recharts";
 
 export default function DeltaVisionAssetClassChart() {
-  const [selectedView, setSelectedView] = useState("Asset Class");
+   const clientId = localStorage.getItem("client");
+
+  const [selectedView, setSelectedView] = useState("Total Group");
+  const [compareMode, setCompareMode] = useState("Yearly");
   const [selectedPeriods, setSelectedPeriods] = useState(["FY 2025"]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const viewByOptions = ["Asset Class", "Sub-Asset Class", "Geography", "Custodian", "Entity", "Total Group"];
-  const allPeriods = ["FY 2025", "FY 2024", "FY 2023", "FY 2022", "FY 2021"];
+  const [apiValue, setApiValue] = useState(null);
+  const [apiClientNo, setApiClientNo] = useState(null);
+  const [entityData, setEntityData] = useState([]);
 
-  /** ---------------------- REAL DATA SUPPORT ---------------------- **/
+  const viewByOptions = ["Entity", "Total Group"];
+  const yearlyOptions = ["FY 2025"];
+  const monthlyOptions = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
   const staticData = [
     {
-       entity: "Entity 1",
+      entity: "Entity 1",
+      total_group: "CLIENT1",
       returns: {
-        "FY 2025": 10.1,
-        "FY 2024": 5.8,
-        "FY 2023": 2.2,
-        "FY 2022": -1.5,
-        "FY 2021": 8.5,
-      },
-   
-      asset_class: "Equity",
-      returns: {
-        "FY 2025": 10.1,
-        "FY 2024": 5.8,
-        "FY 2023": 2.2,
-        "FY 2022": -1.5,
-        "FY 2021": 8.5,
-      },
-    },
-    {
-
-      asset_class: "Fixed Income",
-      returns: {
-        "FY 2025": 6.2,
-        "FY 2024": 4.3,
-        "FY 2023": -1.1,
-        "FY 2022": 2.9,
-        "FY 2021": 4.8,
-      },
-    },
-    {
- 
-      asset_class: "Alternative Investments",
-      returns: {
-        "FY 2025": 9.1,
-        "FY 2024": 6.9,
-        "FY 2023": 2.4,
-        "FY 2022": -0.5,
-        "FY 2021": 6.4,
-      },
-    },
-    {
-   
-      asset_class: "Cash",
-      returns: {
-        "FY 2025": 2.2,
-        "FY 2024": 1.8,
-        "FY 2023": 1.2,
-        "FY 2022": 1.1,
-        "FY 2021": 1.5,
+        Jan: 2.1, Feb: -0.5, Mar: 0.9, Apr: 1.2, May: -1.4, Jun: 2.4,
+        Jul: 1.3, Aug: 0.4, Sep: -0.9, Oct: 1.8, Nov: 2.2, Dec: -0.7,
       },
     },
   ];
 
-  const hasData = selectedPeriods.length > 0;
+  useEffect(() => {
+    if (selectedView === "Entity" && compareMode === "Yearly") {
+      axios.get(`https://optimizalphabackend.onrender.com/api/entity/fytd/${clientId}`)
+        .then(res => setEntityData(res.data.mtd || []))
+        .catch(() => setEntityData([]));
+    }
+  }, [selectedView, compareMode]);
 
-  /** ---------------------- LOGIC FOR VIEW SELECTION ---------------------- **/
+  useEffect(() => {
+    if (selectedView === "Total Group" && compareMode === "Yearly") {
+      axios.get(`https://optimizalphabackend.onrender.com/api/fytd/${clientId}`)
+        .then((res) => {
+          setApiValue(res.data.fytd?.fytd_return ?? 0);
+          setApiClientNo(res.data.fytd?.client_no || "No Name");
+        })
+        .catch(() => {
+          setApiValue(0);
+          setApiClientNo("N/A");
+        });
+    }
+  }, [selectedView, compareMode]);
+
+
   const chartData = useMemo(() => {
-  if (!staticData.length) return [];
+    if (selectedView === "Entity" && compareMode === "Yearly") {
+      return entityData.map(item => ({
+        name: item.account_name,
+        "FY 2025": Number(item.fytd_return),
+      }));
+    }
 
-  // ---- If Entity is selected → only first entity row show ----
-  if (selectedView === "Entity") {
-    const entityRow = staticData.find(item => item.entity);
+    const row = staticData[0];
 
-    if (!entityRow) return [];
+    const obj = {
+      name: selectedView === "Entity" ? row.entity : apiClientNo ?? row.total_group,
+    };
 
-    const obj = { name: entityRow.entity };
-    
-    selectedPeriods.forEach(period => {
-      obj[period] = Math.abs(entityRow.returns?.[period] || 0);
+    selectedPeriods.forEach((period) => {
+      if (
+        selectedView === "Total Group" &&
+        compareMode === "Yearly" &&
+        period === "FY 2025" &&
+        apiValue !== null
+      ) {
+        obj[period] = apiValue;
+      } else {
+        obj[period] = row.returns?.[period] ?? 0;
+      }
     });
 
-    return [obj]; // <-- Always single row
-  }
+    return [obj];
 
-  // ---- Asset Class Mode → Show all asset classes ----
-  return staticData.map(item => {
-    const label = item.asset_class || "Unknown Asset Class";
-    const obj = { name: label };
+  }, [selectedPeriods, selectedView, apiValue, apiClientNo, compareMode, entityData]);
 
-    selectedPeriods.forEach(period => {
-      obj[period] = Math.abs(item.returns?.[period] || 0);
-    });
+  const barColors = ["#16a34a","#f59e0b","#3b82f6","#a855f7","#ef4444","#10b981"];
 
-    return obj;
-  });
-
-}, [staticData, selectedPeriods, selectedView]);
-
-  const barColors = ["#16a34a", "#f59e0b", "#3b82f6", "#a855f7", "#ef4444"];
 
   return (
-    <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-5 mb-8 mt-10 transition-colors duration-300">
+    <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-5 mt-10 transition-all">
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-4">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-          Delta Vision
-        </h2>
+      {/* ------- HEADER ------- */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Delta Vision</h2>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex gap-4 items-center">
 
-          {/* View By */}
+          {/* View Selector WITH LABEL */}
           <div className="flex items-center gap-2">
-            <label className="text-gray-400 dark:text-gray-500 font-medium">View By:</label>
+            <span className="text-gray-400 text-sm">View By:</span>
             <select
               value={selectedView}
               onChange={(e) => setSelectedView(e.target.value)}
-              className="border rounded px-2 py-1 dark:bg-[#1f1f1f] dark:text-white text-sm"
+              className="border rounded px-2 py-1 text-sm dark:bg-[#1f1f1f] dark:text-white"
             >
-              {viewByOptions.map((view) => (
-                <option key={view} value={view}>{view}</option>
-              ))}
+              {viewByOptions.map((v) => <option key={v}>{v}</option>)}
             </select>
           </div>
 
-          {/* Compare Periods */}
-          <div className="flex items-center gap-2 relative">
-            <label className="text-gray-400 dark:text-gray-500 font-medium">Compare Periods:</label>
-            <button
-              onClick={() => setDropdownOpen((prev) => !prev)}
-              className="flex items-center justify-between w-[180px] border rounded px-2 py-1 text-sm dark:bg-[#1f1f1f] dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 transition"
+          {/* Compare Selector WITH LABEL */}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 text-sm">Compare Periods:</span>
+            <select
+              value={compareMode}
+              onChange={(e) => {
+                setCompareMode(e.target.value);
+                setSelectedPeriods(e.target.value === "Yearly" ? ["FY 2025"] : ["Jan"]);
+              }}
+              className="border rounded px-2 py-1 text-sm dark:bg-[#1f1f1f] dark:text-white"
             >
-              <span className="truncate font-semibold text-gray-900 dark:text-white">
-                {selectedPeriods.join(", ")}
-              </span>
-              <svg
-                className={`w-4 h-4 transform transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-
-            {dropdownOpen && (
-              <div className="absolute right-0 top-9 w-44 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg z-20 p-2">
-                {allPeriods.map((year) => (
-                  <label key={year} className="flex items-center gap-2 text-sm px-2 py-1 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedPeriods.includes(year)}
-                      onChange={() =>
-                        setSelectedPeriods((prev) =>
-                          prev.includes(year) ? prev.filter((y) => y !== year) : [...prev, year]
-                        )
-                      }
-                      className="accent-green-500 cursor-pointer"
-                    />
-                    <span className={selectedPeriods.includes(year)
-                      ? "text-green-500 font-semibold"
-                      : "text-gray-700 dark:text-neutral-300"}>
-                      {year}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
+              <option>Yearly</option>
+              <option>Monthly</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="w-full h-[420px] flex flex-col items-center justify-center">
-        {hasData ? (
-         <ResponsiveContainer width="100%" height="100%">
-  <BarChart
-  data={chartData}
-  margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
-  barCategoryGap={selectedView === "Entity" ? "70%" : "20%"}
-  barGap={selectedView === "Entity" ? 5 : 10}
-  barSize={selectedView === "Entity" ? 38 : undefined}
-  activeBar={false}
->
-  <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
-  <XAxis dataKey="name" />
-  <YAxis />
-<Tooltip
-  cursor={{ fill: "rgba(255,255,255,0.05)" }}   // <-- VERY SOFT HOVER EFFECT
-  contentStyle={{
-    backgroundColor: "#1f1f1f",
-    borderRadius: "8px",
-    border: "1px solid #333",
-  }}
-  itemStyle={{ color: "#fff", fontWeight: 600 }}
-  labelStyle={{ color: "#fff" }}
-/>
+      {/* ------- CHART ------- */}
+      <div className="w-full h-[420px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 20, bottom: 60 }}
+            barGap={10}
+            barCategoryGap="30%"
+            barSize={selectedView === "Entity" ? 45 : 35}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
+            <XAxis dataKey="name" />
 
-  <Legend />
+            <YAxis 
+              label={{ value: "Return (%)", angle: -90, position: "insideLeft" }}
+              tickFormatter={(val) => Number(val).toFixed(2)}
+            />
 
-  {selectedPeriods.map((period, i) => (
-    <Bar
-      key={period}
-      dataKey={period}
-      fill={barColors[i % barColors.length]}
-      radius={[6, 6, 0, 0]}
-    />
-  ))}
-</BarChart>
+            <Tooltip
+              formatter={(value) => Number(value).toFixed(2)}
+              cursor={{ fill: "rgba(255,255,255,0.1)" }}
+              contentStyle={{ background: "#1f1f1f", color: "#fff", borderRadius: "6px" }}
+            />
 
-</ResponsiveContainer>
+            <Legend />
 
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No data available for selected period.</p>
-        )}
+            {selectedPeriods.map((period, i) => (
+              <Bar key={period} dataKey={period} fill={barColors[i]} radius={[6,6,0,0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

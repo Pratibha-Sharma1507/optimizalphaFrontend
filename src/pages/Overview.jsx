@@ -4,15 +4,16 @@ import { useOutletContext } from "react-router-dom";
 import AllocationPerformance from "../components/AllocationPerformance";
 import  DeltaVisionAssetClassChart from "../components/DeltaVisionWithFilters";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import PerformanceVsBenchmark from "../components/PerformanceVsBenchmark";
+// import PerformanceVsBenchmark from "../components/PerformanceVsBenchmark";
 import DrilldownPieChart from '../components/DrilldownPieChart';
+import Select from "react-select";
+
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
-
   Legend,
   CartesianGrid,
   LineChart,
@@ -56,7 +57,40 @@ const [selectedPan, setSelectedPan] = useState(localStorage.getItem("selectedPan
     'Sub Asset Class',
   ];
 
-   const toggleGroup = (group) => {
+   
+
+  // Comparison Chart States
+  const [comparisonData, setComparisonData] = useState([]);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonError, setComparisonError] = useState(null);
+  const [selectedIndices, setSelectedIndices] = useState([
+    { value: "nifty50", label: "Nifty 50", color: "#fbbf24" },
+  ]);
+  const [selectedAssetClass, setSelectedAssetClass] = useState({
+    value: "assetClass1",
+    label: "Asset Class 1",
+  });
+
+  const indexOptions = [
+    { value: "nifty50", label: "Nifty 50", color: "#fbbf24" },
+    { value: "nse150", label: "NSE 150", color: "#64748b" },
+    { value: "nse500", label: "NSE 500", color: "#7c3aed" },
+    { value: "nseGscm", label: "NSE GSCM", color: "#e11d48" },
+  ];
+
+  const assetClassDropdownOptions = [
+    { value: "assetClass1", label: "Asset Class 1", isDisabled: false },
+    { value: "assetClass2", label: "Asset Class 2", isDisabled: true },
+  ];
+
+  // Asset class line configurations
+  const assetClassLines = [
+    { dataKey: "equity", name: "Equity", color: "#22c55e" },
+    { dataKey: "fixedIncome", name: "Fixed Income", color: "#3b82f6" },
+    { dataKey: "cash", name: "Cash", color: "#f59e0b" },
+    { dataKey: "alternative", name: "Alternative", color: "#ec4899" },
+  ];
+const toggleGroup = (group) => {
     setExpandedGroups((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(group)) {
@@ -95,6 +129,32 @@ const fetchPortfolios = async () => {
     setLoading(false);
   }
 };
+
+
+const fetchComparisonData = async () => {
+    try {
+      setComparisonLoading(true);
+      setComparisonError(null);
+      const response = await axios.get(
+        `https://optimizalphabackend.onrender.com/api/comparison-data`
+      );
+      setComparisonData(response.data);
+    } catch (error) {
+      console.error("Error fetching comparison data:", error);
+      setComparisonError(error?.response?.data?.message || error.message);
+      setComparisonData([]);
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPortfolios();
+  }, [currency, selectedPan]);
+
+  useEffect(() => {
+    fetchComparisonData();
+  }, []);
 
 
 
@@ -204,15 +264,72 @@ const formatValue = (v, isCurrency = false) => {
     setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
+
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "transparent",
+      borderColor: "#404040",
+      minHeight: "40px",
+      "&:hover": {
+        borderColor: "#525252",
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: "#1a1a1a",
+      border: "1px solid #404040",
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused ? "#2a2a2a" : "#1a1a1a",
+      color: "#fff",
+      cursor: "pointer",
+      "&:active": {
+        backgroundColor: "#3a3a3a",
+      },
+    }),
+    multiValue: (base) => ({
+      ...base,
+      backgroundColor: "#2a2a2a",
+    }),
+    multiValueLabel: (base) => ({
+      ...base,
+      color: "#fff",
+    }),
+    multiValueRemove: (base) => ({
+      ...base,
+      color: "#999",
+      "&:hover": {
+        backgroundColor: "#3a3a3a",
+        color: "#fff",
+      },
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#fff",
+    }),
+    input: (base) => ({
+      ...base,
+      color: "#fff",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#6b7280",
+    }),
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A0A] text-gray-900 dark:text-neutral-100 p-3 sm:p-4 md:p-6">
       {/* TOP STATS */}
     <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 md:gap-12 mb-4 md:mb-6">
   {topStatsKeys.map((key) => (
     <div key={key} className="min-w-0">
-      <p className="text-[10px] text-gray-500 dark:text-neutral-500 mb-1 uppercase tracking-wide">
-        {key === "today_total" ? "PORTFOLIO VALUE" : key.replace(/_/g, " ")}
-      </p>
+     <p className="text-[11px] text-gray-600 dark:text-white mb-1 uppercase tracking-wide">
+  {key === "today_total" ? "PORTFOLIO VALUE" : key.replace(/_/g, " ")}
+</p>
+
 
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
         {formatValue(first[key], true)}
@@ -259,10 +376,9 @@ const formatValue = (v, isCurrency = false) => {
           key={i}
           className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[200px] sm:min-w-[220px] flex-shrink-0 shadow-sm hover:shadow-md transition"
         >
-          {/* Title */}
-          <p className="text-[10px] text-gray-500 dark:text-neutral-500 uppercase mb-2">
-            {item.title}
-          </p>
+          <p className="text-[10px] text-gray-500 dark:text-gray-200 uppercase mb-2">
+  {item.title}
+</p>
 
           {/* LEFT + RIGHT */}
           <div className="flex items-center justify-between">
@@ -335,76 +451,116 @@ const formatValue = (v, isCurrency = false) => {
   < DeltaVisionAssetClassChart />
 
 
+
       {/* DELTA VISION */}
     
 
       {/* PERFORMANCE VS BENCHMARK + SNAPSHOT */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-12">
-        {/* Left: Performance vs Benchmark */}
-        {/* <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
-          <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance vs Benchmark</h2>
-          <div className="w-full h-[250px] sm:h-[280px] md:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={[
-                  { month: "Sep'24", performance: 0, nifty: 0 },
-                  { month: "Oct'24", performance: 5, nifty: 4 },
-                  { month: "Nov'24", performance: 10, nifty: 9 },
-                  { month: "Dec'24", performance: 15, nifty: 13 },
-                  { month: "Jan'25", performance: 20, nifty: 17 },
-                  { month: "Feb'25", performance: 22, nifty: 18 },
-                ]}
-              >
-                <CartesianGrid strokeDasharray="2 2" stroke="#e5e5e5" className="dark:stroke-[#2c2c2c]" />
-                <XAxis dataKey="month" stroke="#9ca3af" className="dark:stroke-[#6b6b6b]" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#9ca3af" className="dark:stroke-[#6b6b6b]" tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Line type="monotone" dataKey="performance" stroke="#34d399" strokeWidth={2} />
-                <Line type="monotone" dataKey="nifty" stroke="#fbbf24" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div> */}
+     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-12">
 
-        <PerformanceVsBenchmark/>
+  <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
+    <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      Asset Class vs Index Comparison
+    </h2>
 
-        {/* Right: Performance Snapshot */}
-        {/* <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
-          <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance Snapshot</h2>
-          <div className="w-full h-[250px] sm:h-[280px] md:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={[
-                  { name: "Opening", value: 0.8 },
-                  { name: "Inflow", value: 0.175 },
-                  { name: "Gain", value: 0.175 },
-                  { name: "Int. Sum", value: 1.15 },
-                  { name: "Loss", value: -0.14 },
-                  { name: "Outflow", value: -0.25 },
-                  { name: "Closing", value: 0.76 },
-                ]}
-              >
-                <CartesianGrid strokeDasharray="2 2" stroke="#e5e5e5" className="dark:stroke-[#2c2c2c]" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#9ca3af" 
-                  className="dark:stroke-[#6b6b6b]" 
-                  tick={{ fontSize: 10 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis stroke="#9ca3af" className="dark:stroke-[#6b6b6b]" tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#34d399" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div> */}
-
-        <DrilldownPieChart/>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+          Select Indices (Multiple)
+        </label>
+        <Select
+          isMulti
+          options={indexOptions}
+          value={selectedIndices}
+          onChange={setSelectedIndices}
+          placeholder="Select indices to compare..."
+          styles={selectStyles}
+          classNamePrefix="select"
+        />
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+          Select Asset Class
+        </label>
+        <Select
+          options={assetClassDropdownOptions}
+          value={selectedAssetClass}
+          onChange={(option) => setSelectedAssetClass(option)}
+          isOptionDisabled={(option) => option.isDisabled}
+          placeholder="Select asset class..."
+          styles={selectStyles}
+          classNamePrefix="select"
+        />
+      </div>
+    </div>
+
+    {comparisonLoading ? (
+      <div className="flex items-center justify-center h-[350px]">
+        <p className="text-gray-600 dark:text-neutral-400">
+          Loading comparison data...
+        </p>
+      </div>
+    ) : comparisonError ? (
+      <div className="flex items-center justify-center h-[350px]">
+        <p className="text-red-400">Error: {comparisonError}</p>
+      </div>
+    ) : comparisonData.length === 0 ? (
+      <div className="flex items-center justify-center h-[350px]">
+        <p className="text-gray-600 dark:text-neutral-400">
+          No data available
+        </p>
+      </div>
+    ) : (
+      <div className="w-full h-[280px] sm:h-[310px] md:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={comparisonData}
+            margin={{ top: 5, right: 24, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
+            <XAxis dataKey="date" stroke="#9ca3af" tick={{ fontSize: 12 }} />
+            <YAxis
+              stroke="#9ca3af"
+              tick={{ fontSize: 12 }}
+              tickFormatter={(v) => `${v}%`}
+            />
+            <Tooltip formatter={(value) => `${value}%`} />
+            <Legend wrapperStyle={{ fontSize: "13px" }} />
+
+            {selectedAssetClass.value === "assetClass1" &&
+              assetClassLines.map((line) => (
+                <Line
+                  key={line.dataKey}
+                  type="monotone"
+                  dataKey={line.dataKey}
+                  stroke={line.color}
+                  strokeWidth={2}
+                  name={line.name}
+                  dot={{ r: 5 }}
+                />
+              ))}
+
+            {selectedIndices.map((index) => (
+              <Line
+                key={index.value}
+                type="monotone"
+                dataKey={index.value}
+                stroke={index.color}
+                strokeWidth={2}
+                name={index.label}
+                dot={{ r: 4 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    )}
+  </div>
+
+
+  <DrilldownPieChart />
+</div>
 
       {/* PORTFOLIO DRAWDOWN + RISK METRICS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-12">

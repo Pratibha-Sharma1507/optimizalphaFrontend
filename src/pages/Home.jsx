@@ -274,9 +274,9 @@ const horizontalCardsData = useMemo(() => {
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 md:gap-12 mb-4 md:mb-6">
   {staticData.topStatsKeys.map((key) => (
     <div key={key} className="min-w-0">
-      <p className="text-[11px] text-gray-600 dark:text-neutral-500 mb-1 uppercase tracking-wide">
-        {key === "today_total" ? "PORTFOLIO VALUE" : key.replace(/_/g, " ")}
-      </p>
+    <p className="text-[11px] text-gray-600 dark:text-white mb-1 uppercase tracking-wide">
+  {key === "today_total" ? "PORTFOLIO VALUE" : key.replace(/_/g, " ")}
+</p>
 
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
         {formatValue(first[key], true)}
@@ -344,9 +344,9 @@ const horizontalCardsData = useMemo(() => {
           min-w-[260px] sm:min-w-[280px] flex-shrink-0 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           {/* Title */}
-          <p className="text-[11px] mb-3 font-semibold text-gray-700 dark:text-neutral-400 uppercase tracking-wide">
-            {item.title}
-          </p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-200 uppercase mb-2">
+  {item.title}
+</p>
 
           {/* CONTENT WRAPPER */}
           <div className="flex items-center justify-between gap-3">
@@ -354,7 +354,8 @@ const horizontalCardsData = useMemo(() => {
               
               {/* Return */}
               <div className="flex items-center justify-between w-[120px]">
-                <span className="opacity-75">Return</span>
+              <span className="opacity-75 dark:text-white">Return</span>
+
                 <span
                   className={`font-bold ${
                     item.isNegative ? "text-red-500" : "text-green-500"
@@ -368,7 +369,7 @@ const horizontalCardsData = useMemo(() => {
               {/* Value */}
               {item.value !== null && (
                 <div className="flex items-center justify-between w-[120px]">
-                  <span className="opacity-75">Value</span>
+                 <span className="opacity-75 dark:text-white">Value</span>
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {item.value !== null
                       ? formatValue(Number(item.value), true)
