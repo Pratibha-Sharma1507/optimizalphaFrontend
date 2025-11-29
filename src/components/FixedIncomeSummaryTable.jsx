@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useOutletContext } from "react-router-dom";
 
-const API_BASE = "https://optimizalphabackend.onrender.com/api";
+const API_BASE = "http://localhost:5500/api";
 
 export default function FixedIncomeSummaryTable() {
   const [data, setData] = useState([]);

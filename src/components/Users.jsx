@@ -14,7 +14,7 @@ export default function UsersList() {
     setErrorMsg("");
 
     try {
-      const res = await axios.get("https://optimizalphabackend.onrender.com/api/allusers", {
+      const res = await axios.get("http://localhost:5500/api/allusers", {
         withCredentials: true,
       });
 

@@ -6,7 +6,8 @@ import  DeltaVisionAssetClassChart from "../components/DeltaVisionWithFilters";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 // import PerformanceVsBenchmark from "../components/PerformanceVsBenchmark";
 import DrilldownPieChart from '../components/DrilldownPieChart';
-import Select from "react-select";
+// import Select from "react-select";
+import Select, { components } from "react-select";
 
 import {
   BarChart,
@@ -25,6 +26,9 @@ axios.defaults.withCredentials = true;
 
 const API_ENDPOINT = "https://optimizalphabackend.onrender.com/api/account";
 
+
+
+
 // Small sparkline component for Risk Metrics
 const Sparkline = ({ data }) => (
   <svg viewBox="0 0 100 24" className="w-full h-5">
@@ -37,12 +41,48 @@ const Sparkline = ({ data }) => (
   </svg>
 );
 
+const CheckboxOption = (props) => {
+  return (
+    <components.Option {...props}>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={props.isSelected}
+          onChange={() => null}
+          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+        />
+        <label className="cursor-pointer text-sm">{props.label}</label>
+      </div>
+    </components.Option>
+  );
+};
+
+// Custom ValueContainer to show count
+const CustomValueContainer = ({ children, ...props }) => {
+  const { getValue, hasValue } = props;
+  const selectedCount = getValue().length;
+  
+  if (!hasValue) {
+    return <components.ValueContainer {...props}>{children}</components.ValueContainer>;
+  }
+
+  return (
+    <components.ValueContainer {...props}>
+      <div className="text-sm text-gray-200">
+        {selectedCount} {selectedCount === 1 ? 'index' : 'indices'}
+      </div>
+    </components.ValueContainer>
+  );
+};
+
+
 export default function Overview() {
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const scrollRef = useRef();
   const { currency } = useOutletContext();
+    const [menuIsOpen, setMenuIsOpen] = useState(false);
  
     const hasFetchedRef = useRef(false); // To prevent double fetch
 const [selectedPan, setSelectedPan] = useState(localStorage.getItem("selectedPan") || "All");
@@ -59,37 +99,60 @@ const [selectedPan, setSelectedPan] = useState(localStorage.getItem("selectedPan
 
    
 
-  // Comparison Chart States
+ // Comparison Chart States - UPDATED with 3 dropdowns
   const [comparisonData, setComparisonData] = useState([]);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState(null);
-  const [selectedIndices, setSelectedIndices] = useState([
-    { value: "nifty50", label: "Nifty 50", color: "#fbbf24" },
-  ]);
-  const [selectedAssetClass, setSelectedAssetClass] = useState({
-    value: "assetClass1",
-    label: "Asset Class 1",
+  
+  const [selectedAssetClass1, setSelectedAssetClass1] = useState({
+    value: "equity",
+    label: "Equity",
   });
+  const [selectedAssetClass2, setSelectedAssetClass2] = useState(null);
+  const [selectedIndices, setSelectedIndices] = useState([
+    { value: "nifty50", label: "NIFTY 50", color: "#fbbf24" },
+  ]);
 
+  // Asset Class 1 options (main categories)
+  const assetClass1Options = [
+    { value: "equity", label: "Equity" },
+    { value: "fixedIncome", label: "Fixed Income" },
+    { value: "cash", label: "Cash" },
+    { value: "alternative", label: "Alternative Investments" },
+  ];
+
+  // Asset Class 2 options (subcategories) - mapped to Asset Class 1
+  const assetClass2OptionsMap = {
+    equity: [
+      { value: "equityListed", label: "Equity-Listed" },
+      { value: "equityMF", label: "Equity-MF" },
+      { value: "equityPEDirect", label: "Private Equity - Direct" },
+      { value: "equityPEVC", label: "Private Equity - VC" },
+    ],
+    fixedIncome: [
+      { value: "fixedIncomeMF", label: "Fixed Income-MF" },
+    ],
+    cash: [
+      { value: "cashMMF", label: "Cash-MMF" },
+    ],
+    alternative: [
+      { value: "aifREIT", label: "AIF-REIT" },
+      { value: "aifHF", label: "AIF-HF" },
+    ],
+  };
+
+  // Get Asset Class 2 options based on selected Asset Class 1
+  const assetClass2Options = assetClass2OptionsMap[selectedAssetClass1?.value] || [];
+
+  // UPDATED: Index options - Now with 5 indices
   const indexOptions = [
-    { value: "nifty50", label: "Nifty 50", color: "#fbbf24" },
+    { value: "nifty50", label: "NIFTY 50", color: "#fbbf24" },
     { value: "nse150", label: "NSE 150", color: "#64748b" },
     { value: "nse500", label: "NSE 500", color: "#7c3aed" },
-    { value: "nseGscm", label: "NSE GSCM", color: "#e11d48" },
+    { value: "nseGscmp", label: "NSE GSCMP", color: "#e11d48" },
+    { value: "overnightLiquid", label: "Overnight Liquid Rate", color: "#10b981" },
   ];
 
-  const assetClassDropdownOptions = [
-    { value: "assetClass1", label: "Asset Class 1", isDisabled: false },
-    { value: "assetClass2", label: "Asset Class 2", isDisabled: true },
-  ];
-
-  // Asset class line configurations
-  const assetClassLines = [
-    { dataKey: "equity", name: "Equity", color: "#22c55e" },
-    { dataKey: "fixedIncome", name: "Fixed Income", color: "#3b82f6" },
-    { dataKey: "cash", name: "Cash", color: "#f59e0b" },
-    { dataKey: "alternative", name: "Alternative", color: "#ec4899" },
-  ];
 const toggleGroup = (group) => {
     setExpandedGroups((prev) => {
       const newSet = new Set(prev);
@@ -131,30 +194,93 @@ const fetchPortfolios = async () => {
 };
 
 
+// const fetchComparisonData = async () => {
+//     try {
+//       setComparisonLoading(true);
+//       setComparisonError(null);
+      
+//       const clientId = localStorage.getItem("client") || "1";
+      
+//       // Build query parameters
+//       // let queryParams = `assetClass1=${selectedAssetClass1.value}&client=${clientId}`;
+//       let queryParams = `assetClass1=${selectedAssetClass1.value}&client_id=${clientId}`;
+
+      
+//       if (selectedAssetClass2) {
+//         queryParams += `&assetClass2=${selectedAssetClass2.value}`;
+//       }
+      
+//       console.log(`Fetching comparison data with params: ${queryParams}`);
+      
+//       const response = await axios.get(
+//         `http://localhost:5500/api/comparison-data?${queryParams}`,
+//         { withCredentials: false }
+//       );
+      
+//       console.log('Comparison data received:', response.data.length, 'records');
+//       setComparisonData(response.data);
+//     } catch (error) {
+//       console.error("Error fetching comparison data:", error);
+//       setComparisonError(error?.response?.data?.message || error.message);
+//       setComparisonData([]);
+//     } finally {
+//       setComparisonLoading(false);
+//     }
+//   };
+
+
 const fetchComparisonData = async () => {
-    try {
-      setComparisonLoading(true);
-      setComparisonError(null);
-      const response = await axios.get(
-        `https://optimizalphabackend.onrender.com/api/comparison-data`
-      );
-      setComparisonData(response.data);
-    } catch (error) {
-      console.error("Error fetching comparison data:", error);
-      setComparisonError(error?.response?.data?.message || error.message);
-      setComparisonData([]);
-    } finally {
-      setComparisonLoading(false);
+  try {
+    setComparisonLoading(true);
+    setComparisonError(null);
+
+    const clientId = localStorage.getItem("client") || "1";
+
+    // Build query parameters
+    let queryParams = `assetClass1=${selectedAssetClass1.value}&client_id=${clientId}`;
+
+    if (selectedAssetClass2) {
+      queryParams += `&assetClass2=${selectedAssetClass2.value}`;
     }
+
+    console.log(`Fetching comparison data with params: ${queryParams}`);
+
+    const response = await axios.get(
+      `https://optimizalphabackend.onrender.com/api/comparison-data?${queryParams}`,
+      { withCredentials: true }
+    );
+
+    console.log('Comparison data received:', response.data.length, 'records');
+    setComparisonData(response.data);
+  } catch (error) {
+    console.error("Error fetching comparison data:", error);
+    setComparisonError(error?.response?.data?.message || error.message);
+    setComparisonData([]);
+  } finally {
+    setComparisonLoading(false);
+  }
+};
+
+
+  // Handle Asset Class 1 change - reset Asset Class 2
+  const handleAssetClass1Change = (option) => {
+    setSelectedAssetClass1(option);
+    setSelectedAssetClass2(null);
+    setComparisonData([]);
+  };
+
+  // Handle Asset Class 2 change
+  const handleAssetClass2Change = (option) => {
+    setSelectedAssetClass2(option);
   };
 
   useEffect(() => {
     fetchPortfolios();
   }, [currency, selectedPan]);
 
-  useEffect(() => {
-    fetchComparisonData();
-  }, []);
+ useEffect(() => {
+  fetchComparisonData();
+}, [selectedAssetClass1, selectedAssetClass2]);
 
 
 
@@ -182,8 +308,8 @@ useEffect(() => {
   const topStatsKeys = ["today_total"];
 
   const horizontalItems = [
-       { title: "Daily", returnKey: "daily_return"},
-    { title: "1-Week", returnKey: "1w_return" },
+       { title: "Daily", returnKey: "daily_return", valueKey: "yesterday_total"},
+    { title: "1-Week", returnKey: "1w_return" , valueKey: "1w_value"},
     { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
     { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
     { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
@@ -231,14 +357,7 @@ const formatValue = (v, isCurrency = false) => {
 };
 
 
-  const deltaVisionData = [
-    { name: "North America", FY2022: 4000, FY2023: 3600, FY2024: 4200 },
-    { name: "Germany", FY2022: 3000, FY2023: 3800, FY2024: 3500 },
-    { name: "Asia Region", FY2022: 4200, FY2023: 4100, FY2024: 3900 },
-    { name: "Latin America", FY2022: 3000, FY2023: 3400, FY2024: 3200 },
-    { name: "Middle East", FY2022: 2800, FY2023: 3000, FY2024: 3100 },
-  ];
-
+  
   const drawdownData = [
     { month: "Sep'24", value: 0 },
     { month: "Oct'24", value: -7 },
@@ -260,17 +379,13 @@ const formatValue = (v, isCurrency = false) => {
     { name: "Maximum Drawdown", portfolio: 15.2, benchmark: 18.7, trend: [3, 4, 4, 5, 5] },
   ];
 
-  const toggleExpand = (index) => {
-    setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
-  };
-
-
   const selectStyles = {
-    control: (base) => ({
+    control: (base, state) => ({
       ...base,
       backgroundColor: "transparent",
       borderColor: "#404040",
       minHeight: "40px",
+      boxShadow: "none",
       "&:hover": {
         borderColor: "#525252",
       },
@@ -285,25 +400,14 @@ const formatValue = (v, isCurrency = false) => {
       backgroundColor: state.isFocused ? "#2a2a2a" : "#1a1a1a",
       color: "#fff",
       cursor: "pointer",
+      padding: "8px 12px",
       "&:active": {
         backgroundColor: "#3a3a3a",
       },
     }),
     multiValue: (base) => ({
       ...base,
-      backgroundColor: "#2a2a2a",
-    }),
-    multiValueLabel: (base) => ({
-      ...base,
-      color: "#fff",
-    }),
-    multiValueRemove: (base) => ({
-      ...base,
-      color: "#999",
-      "&:hover": {
-        backgroundColor: "#3a3a3a",
-        color: "#fff",
-      },
+      display: "none",
     }),
     singleValue: (base) => ({
       ...base,
@@ -317,8 +421,11 @@ const formatValue = (v, isCurrency = false) => {
       ...base,
       color: "#6b7280",
     }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: "2px 8px",
+    }),
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A0A] text-gray-900 dark:text-neutral-100 p-3 sm:p-4 md:p-6">
@@ -331,9 +438,10 @@ const formatValue = (v, isCurrency = false) => {
 </p>
 
 
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
-        {formatValue(first[key], true)}
-      </h2>
+      <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white break-words">
+  {formatValue(first[key], true)}
+</h2>
+
     </div>
   ))}
 </div>
@@ -341,7 +449,7 @@ const formatValue = (v, isCurrency = false) => {
 
       {/* HORIZONTAL SCROLLABLE CARDS */}
    
-<div className="relative mb-8 md:mb-12">
+<div className="relative mb-6 md:mb-8">
   {/* Left scroll button */}
   <button
     onClick={() =>
@@ -357,26 +465,32 @@ const formatValue = (v, isCurrency = false) => {
   {/* Scrollable cards */}
   <div
     ref={scrollRef}
-    className="flex overflow-x-auto gap-3 scrollbar-hide scroll-smooth px-1"
+    className="flex overflow-x-auto gap-3 scrollbar-hide scroll-smooth px-2"
   >
     {horizontalItems.map((item, i) => {
-      const returnValue = item.returnKey ? first[item.returnKey] : null;
-      const numericReturn = returnValue != null ? Number(returnValue) : null;
-      const value = item.valueKey ? first[item.valueKey] : null;
+  const returnValue = item.returnKey ? first[item.returnKey] : null;
+  const numericReturn = returnValue != null ? Number(returnValue) : null;
 
-      const isNegative = numericReturn < 0;
-      const lineColor = isNegative ? "#ef4444" : "#22c55e";
+  // --- JUST THIS LOGIC ADDED (same as second code)
+  const value = item.valueKey
+    ? Number(first.today_total || 0) - Number(first[item.valueKey] || 0)
+    : null;
+  // ----------------------------------------------
 
-      const trendData = Array.from({ length: 8 }, () => ({
-        value: numericReturn + (Math.random() - 0.5) * 0.4,
-      }));
+  const isNegative = numericReturn < 0;
+  const lineColor = isNegative ? "#ef4444" : "#22c55e";
+
+  const trendData = Array.from({ length: 8 }, () => ({
+    value: numericReturn + (Math.random() - 0.5) * 0.4,
+  }));
 
       return (
         <div
           key={i}
-          className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[200px] sm:min-w-[220px] flex-shrink-0 shadow-sm hover:shadow-md transition"
+          className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[240px] sm:min-w-[260px] flex-shrink-0 shadow-sm hover:shadow-md transition"
+
         >
-          <p className="text-[10px] text-gray-500 dark:text-gray-200 uppercase mb-2">
+          <p className="text-[20px] text-gray-500 dark:text-gray-200 uppercase mb-2">
   {item.title}
 </p>
 
@@ -384,27 +498,47 @@ const formatValue = (v, isCurrency = false) => {
           <div className="flex items-center justify-between">
 
             {/* LEFT: RETURN + VALUE */}
-            <div className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
+           <div className="text-[11px] font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
 
-              {/* Return */}
-              <span>
-                Return {" "}
-                <span className={`font-semibold ${isNegative ? "text-red-500" : "text-green-500"}`}>
-                  {numericReturn != null ? `${numericReturn > 0 ? "+" : ""}${numericReturn.toFixed(2)}%` : "—"}
-                </span>
-              </span>
+  {/* Return */}
+  <span>
+    Return{" "}
+    <span
+      className={`font-bold text-[16px] ml-1 ${
+        isNegative ? "text-red-500" : "text-green-500"
+      }`}
+    >
+      {numericReturn != null
+        ? `${numericReturn > 0 ? "+" : ""}${numericReturn.toFixed(2)}%`
+        : "—"}
+    </span>
+  </span>
 
-              {/* Value (only if exists) */}
-              {value != null && (
-                <span>
-                  Value {" "}
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                  {value != null ? formatValue(value, true) : "—"}
+  {/* Value (only if exists) */}
+  {value !== null && (
+  <span>
+    Change{" "}
+    <span
+      className={`font-semibold text-[15px] ml-1 ${
+        value < 0
+          ? "text-red-500 dark:text-red-400"
+          : value > 0
+          ? "text-green-500 dark:text-green-400"
+          : "text-gray-400"
+      }`}
+    >
+      {value > 0 
+        ? `+${formatValue(value, true)}` 
+        : value < 0 
+        ? `-${formatValue(Math.abs(value), true)}` 
+        : formatValue(value, true)}
+    </span>
+  </span>
+)}
 
-                  </span>
-                </span>
-              )}
-            </div>
+
+</div>
+
 
             {/* RIGHT: SPARKLINE */}
             <div className="w-[60px] h-[26px]">
@@ -457,106 +591,153 @@ const formatValue = (v, isCurrency = false) => {
 
       {/* PERFORMANCE VS BENCHMARK + SNAPSHOT */}
      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-12">
+        <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Asset Class vs Index Comparison
+          </h2>
 
-  <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-5 md:p-6">
-    <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">
-      Asset Class vs Index Comparison
-    </h2>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
-          Select Indices (Multiple)
-        </label>
-        <Select
-          isMulti
-          options={indexOptions}
-          value={selectedIndices}
-          onChange={setSelectedIndices}
-          placeholder="Select indices to compare..."
-          styles={selectStyles}
-          classNamePrefix="select"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
-          Select Asset Class
-        </label>
-        <Select
-          options={assetClassDropdownOptions}
-          value={selectedAssetClass}
-          onChange={(option) => setSelectedAssetClass(option)}
-          isOptionDisabled={(option) => option.isDisabled}
-          placeholder="Select asset class..."
-          styles={selectStyles}
-          classNamePrefix="select"
-        />
-      </div>
-    </div>
-
-    {comparisonLoading ? (
-      <div className="flex items-center justify-center h-[350px]">
-        <p className="text-gray-600 dark:text-neutral-400">
-          Loading comparison data...
-        </p>
-      </div>
-    ) : comparisonError ? (
-      <div className="flex items-center justify-center h-[350px]">
-        <p className="text-red-400">Error: {comparisonError}</p>
-      </div>
-    ) : comparisonData.length === 0 ? (
-      <div className="flex items-center justify-center h-[350px]">
-        <p className="text-gray-600 dark:text-neutral-400">
-          No data available
-        </p>
-      </div>
-    ) : (
-      <div className="w-full h-[280px] sm:h-[310px] md:h-[350px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={comparisonData}
-            margin={{ top: 5, right: 24, left: 0, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
-            <XAxis dataKey="date" stroke="#9ca3af" tick={{ fontSize: 12 }} />
-            <YAxis
-              stroke="#9ca3af"
-              tick={{ fontSize: 12 }}
-              tickFormatter={(v) => `${v}%`}
-            />
-            <Tooltip formatter={(value) => `${value}%`} />
-            <Legend wrapperStyle={{ fontSize: "13px" }} />
-
-            {selectedAssetClass.value === "assetClass1" &&
-              assetClassLines.map((line) => (
-                <Line
-                  key={line.dataKey}
-                  type="monotone"
-                  dataKey={line.dataKey}
-                  stroke={line.color}
-                  strokeWidth={2}
-                  name={line.name}
-                  dot={{ r: 5 }}
-                />
-              ))}
-
-            {selectedIndices.map((index) => (
-              <Line
-                key={index.value}
-                type="monotone"
-                dataKey={index.value}
-                stroke={index.color}
-                strokeWidth={2}
-                name={index.label}
-                dot={{ r: 4 }}
+          {/* UPDATED: 3 Cascading Dropdowns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Dropdown 1: Asset Class */}
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Asset Class</label>
+              <Select
+                options={assetClass1Options}
+                value={selectedAssetClass1}
+                onChange={handleAssetClass1Change}
+                placeholder="Select asset class..."
+                isSearchable={false}
+                styles={selectStyles}
+                classNamePrefix="select"
               />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    )}
-  </div>
+            </div>
+
+            {/* Dropdown 2: Sub Category */}
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Sub Category</label>
+              <Select
+                options={assetClass2Options}
+                value={selectedAssetClass2}
+                onChange={handleAssetClass2Change}
+                placeholder="sub category..."
+                isSearchable={false}
+                isClearable
+                styles={selectStyles}
+                classNamePrefix="select"
+              />
+            </div>
+
+            {/* Dropdown 3: Indices (Multi-select) */}
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Indices</label>
+              <Select
+                isMulti
+                options={indexOptions}
+                value={selectedIndices}
+                onChange={setSelectedIndices}
+                placeholder="Select indices..."
+                isSearchable={false}
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                blurInputOnSelect={false}
+                menuIsOpen={menuIsOpen}
+                onMenuOpen={() => setMenuIsOpen(true)}
+                onMenuClose={() => setMenuIsOpen(false)}
+                components={{ 
+                  Option: CheckboxOption,
+                  ValueContainer: CustomValueContainer
+                }}
+                styles={selectStyles}
+                classNamePrefix="select"
+              />
+            </div>
+          </div>
+
+          {comparisonLoading ? (
+            <div className="flex items-center justify-center h-[350px]">
+              <p className="text-gray-600 dark:text-neutral-400">
+                Loading comparison data...
+              </p>
+            </div>
+          ) : comparisonError ? (
+            <div className="flex items-center justify-center h-[350px]">
+              <p className="text-red-400">Error: {comparisonError}</p>
+            </div>
+          ) : comparisonData.length === 0 ? (
+            <div className="flex items-center justify-center h-[350px]">
+              <p className="text-gray-600 dark:text-neutral-400">
+                No data available
+              </p>
+            </div>
+          ) : (
+            <div className="w-full h-[280px] sm:h-[310px] md:h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={comparisonData}
+                  margin={{ top: 5, right: 24, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
+                  
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#9ca3af" 
+                    tick={{ fontSize: 12 }}
+                    interval={Math.floor(comparisonData.length / 6)}
+                  />
+                  
+                  <YAxis
+                    stroke="#9ca3af"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  
+                  <Tooltip 
+                    formatter={(value) => `${value}%`}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload.length > 0) {
+                        return payload[0].payload.fullDate;
+                      }
+                      return label;
+                    }}
+                    contentStyle={{
+                      backgroundColor: '#1a1a1a',
+                      border: '1px solid #404040',
+                      borderRadius: '8px',
+                      color: '#fff'
+                    }}
+                  />
+                  
+                  <Legend wrapperStyle={{ fontSize: "13px" }} />
+
+                  {/* Main Asset Class Line */}
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#22c55e"
+                    strokeWidth={3}
+                    name={selectedAssetClass2?.label || selectedAssetClass1?.label}
+                    dot={{ fill: '#22c55e', r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+
+                  {/* Index Lines */}
+                  {selectedIndices.map((index) => (
+                    <Line
+                      key={index.value}
+                      type="monotone"
+                      dataKey={index.value}
+                      stroke={index.color}
+                      strokeWidth={2}
+                      name={index.label}
+                      dot={{ fill: index.color, r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
 
 
   <DrilldownPieChart />

@@ -126,7 +126,7 @@ export default function MutualFunds() {
   );
 }
 
-// ✅ Reusable Summary Card (light/dark support)
+//  Reusable Summary Card (light/dark support)
 function SummaryCard({ title, value, positive }) {
   return (
     <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-neutral-800 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300">

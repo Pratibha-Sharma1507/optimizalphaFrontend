@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import FixedIncomeSummaryTable from "./FixedIncomeSummaryTable";
 
-const API_ENDPOINT = "https://optimizalphabackend.onrender.com/api/fixedincome"; // Update your backend endpoint
+const API_ENDPOINT = "https://optimizalphabackend.onrender.com/api/fixedincome"; // 
 
 function KpiCard({ title, value, change, positive }) {
   return (

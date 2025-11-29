@@ -130,7 +130,7 @@ useEffect(() => {
     try {
       let res;
 
-      // 🔥 Primary table => Always account to asset classes
+      //  Primary table => Always account to asset classes
       if (allocationOption === "Account") {
         res = await axios.get(`${API_BASE}/account-summary/${selectedAccount}`);
       } else {
@@ -203,7 +203,7 @@ const handleExpand = async (rowName) => {
   const clientId = localStorage.getItem("client");
   const res = await axios.get(`${API_BASE}/pan-summary1/${clientId}`);
 
-  console.log("📌 Summary Raw Response:", res.data);
+  console.log(" Summary Raw Response:", res.data);
 
   if (!res.data || res.data.length === 0) return;
 
@@ -233,14 +233,14 @@ const handleExpand = async (rowName) => {
     "FYTD Return %": item.fytd_return ?? "—",
   }));
 
-  // 🟢 CORRECT: USE formatted — not res.data
+  //  CORRECT: USE formatted — not res.data
   setColumns(Object.keys(formatted[0]));
   setSubData(prev => ({
     ...prev,
     ["Summary View"]: formatted
   }));
 
-  console.log("📌 Summary Formatted:", formatted);
+  console.log(" Summary Formatted:", formatted);
   return;
 }
 
@@ -501,7 +501,7 @@ const transformed = accountsForAsset.map((acc) => ({
       <div className="flex items-center gap-2">
         <span className="text-gray-600 dark:text-gray-400 text-sm whitespace-nowrap">Allocation by:</span>
         <select
-          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
+          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm w-36 px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
           value={allocationOption}
           onChange={(e) => setAllocationOption(e.target.value)}
         >
@@ -513,7 +513,7 @@ const transformed = accountsForAsset.map((acc) => ({
       <div className="flex items-center gap-2">
         <span className="text-gray-600 dark:text-gray-400 text-sm whitespace-nowrap">Distribution by:</span>
         <select
-          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
+          className="bg-white dark:bg-[#141414] text-gray-900 dark:text-gray-200 text-sm px-3 w-36 py-1 border border-gray-300 dark:border-[#3a3a3a] rounded-md"
           value={distributionOption}
           onChange={(e) => setDistributionOption(e.target.value)}
         >
@@ -544,76 +544,107 @@ const transformed = accountsForAsset.map((acc) => ({
       </thead>
 
 <tbody>
-  {/* 🔥 Always visible Summary Row (no click, always open) */}
-{subData["Summary View"]?.[0] && (
-  <tr className="sticky top-0 z-50 bg-yellow-50 dark:bg-[#2f2f0a] font-semibold border-b border-gray-300 dark:border-[#333]">
-    {columns.map((col, i) => (
-      <td key={i} className="px-6 py-4 text-gray-900 dark:text-gray-200 whitespace-nowrap">
-        {i === 0 
-          ? subData["Summary View"][0]?.Name || "—"
-          : (
-              col.toLowerCase().includes("value") || col.includes("Total")
-                ? formatValue(subData["Summary View"][0][col], true)
-                : !isNaN(subData["Summary View"][0][col])
-                ? Number(subData["Summary View"][0][col]).toFixed(2)
-                : (subData["Summary View"][0][col] ?? "—")
-            )
-        }
-      </td>
-    ))}
-  </tr>
-)}
 
+  {/* ---- Summary Row ---- */}
+  {subData["Summary View"]?.[0] && (
+    <tr className="sticky top-0 z-50 bg-yellow-50 dark:bg-[#2f2f0a] font-semibold border-b border-gray-300 dark:border-[#333]">
+      {columns.map((col, i) => {
+        const raw = subData["Summary View"][0][col];
+        const isValue = col.toLowerCase().includes("value") || col.includes("Total");
+        return (
+          <td key={i} className="px-6 py-4 whitespace-nowrap">
+            {i === 0 ? (
+              raw || "—"
+            ) : isValue ? (
+              <span className={Number(raw) < 0 ? "text-red-500 font-semibold" : ""}>
+                {formatValue(raw, true)}
+              </span>
+            ) : !isNaN(raw) ? (
+              Number(raw).toFixed(2)
+            ) : (
+              raw ?? "—"
+            )}
+          </td>
+        );
+      })}
+    </tr>
+  )}
+
+  {/* ---- MAIN ROWS ---- */}
   {data.map((row) => (
     <React.Fragment key={row.Name}>
       <tr
         onClick={() => handleExpand(row.Name)}
         className="cursor-pointer bg-white dark:bg-[#141414] hover:bg-gray-100 dark:hover:bg-[#1d1d1d] border-b border-gray-200 dark:border-[#1f1f1f]"
       >
-        {columns.map((col, i) => (
-          <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-            {i === 0 ? (
-              <div className="flex items-center gap-2 font-medium">
-                <ExpandArrow open={expanded === row.Name} /> {row[col]}
-              </div>
-            ) : 
-              // 🟢 currency/value fields
-              col.toLowerCase().includes("value") || col === "Today Total" || col === "Yesterday Total"
-                ? formatValue(row[col], true)
-                :
-              // 🟠 return fields
-              !isNaN(row[col]) && row[col] !== null && row[col] !== ""
-                ? Number(row[col]).toFixed(2)
-                : (row[col] ?? "—")
-            }
-          </td>
-        ))}
+        {columns.map((col, i) => {
+          const raw = row[col];
+          const isValue =
+            col.toLowerCase().includes("value") ||
+            col === "Today Total" ||
+            col === "Yesterday Total";
+
+          return (
+            <td key={i} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+              {i === 0 ? (
+                <div className="flex items-center gap-2 font-medium">
+                  <ExpandArrow open={expanded === row.Name} /> {raw}
+                </div>
+              ) : isValue ? (
+                <span className={Number(raw) < 0 ? "text-red-500 font-semibold" : ""}>
+                  {formatValue(raw, true)}
+                </span>
+              ) : !isNaN(raw) && raw !== null && raw !== "" ? (
+                <span className={Number(raw) < 0 ? "text-red-500 font-semibold" : ""}>
+                  {Number(raw).toFixed(2)}
+                </span>
+              ) : (
+                raw ?? "—"
+              )}
+            </td>
+          );
+        })}
       </tr>
 
+      {/* ---- SUB ROWS ---- */}
       {expanded === row.Name &&
         subData[row.Name]?.map((sub, i2) => (
-          <tr key={i2} className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515]">
-            {columns.map((col, i3) => (
-              <td key={i3} className="px-6 py-4 text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                {i3 === 0 ? (
-                  <span className="pl-10">{sub[col]}</span>
-                ) :
-                  // 🟢 Currency/value columns
-                  col.toLowerCase().includes("value") || col === "Today Total" || col === "Yesterday Total"
-                    ? formatValue(sub[col], true)
-                    :
-                  // 🟠 return columns format with decimals
-                  !isNaN(sub[col]) && sub[col] !== null && sub[col] !== ""
-                    ? Number(sub[col]).toFixed(2)
-                    : (sub[col] ?? "—")
-                }
-              </td>
-            ))}
+          <tr
+            key={i2}
+            className="bg-gray-50 dark:bg-[#0b0b0b] hover:bg-gray-100 dark:hover:bg-[#151515]"
+          >
+            {columns.map((col, i3) => {
+              const raw = sub[col];
+              const isValue =
+                col.toLowerCase().includes("value") ||
+                col === "Today Total" ||
+                col === "Yesterday Total";
+
+              return (
+                <td key={i3} className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-200">
+                  {i3 === 0 ? (
+                    <span className="pl-10">{raw}</span>
+                  ) : isValue ? (
+                    <span className={Number(raw) < 0 ? "text-red-500 font-semibold" : ""}>
+                      {formatValue(raw, true)}
+                    </span>
+                  ) : !isNaN(raw) && raw !== null && raw !== "" ? (
+                    <span className={Number(raw) < 0 ? "text-red-500 font-semibold" : ""}>
+                      {Number(raw).toFixed(2)}
+                    </span>
+                  ) : (
+                    raw ?? "—"
+                  )}
+                </td>
+              );
+            })}
           </tr>
         ))}
     </React.Fragment>
   ))}
+
 </tbody>
+
 
 
 

@@ -134,8 +134,8 @@ useEffect(() => {
   const staticData = useMemo(() => ({
     topStatsKeys: ["today_total"],
     horizontalItems: [
-    { title: "Daily", returnKey: "daily_return"},
-    { title: "1-Week", returnKey: "1w_return" },
+    { title: "Daily", returnKey: "daily_return",valueKey: "yesterday_total"  },
+    { title: "1-Week", returnKey: "1w_return",  valueKey: "1w_value" },
     { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
     { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
     { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
@@ -199,20 +199,27 @@ useEffect(() => {
   //  Memoized horizontal cards data
 const horizontalCardsData = useMemo(() => {
   if (!portfolios.length) return [];
+
   const first = portfolios[0];
+  const todayTotal = Number(first.today_total || 0);
 
   return staticData.horizontalItems.map(item => {
-    const returnValue = first[item.returnKey] ?? 0;
-    const value = item.valueKey ? first[item.valueKey] : null;
+    const returnValue = Number(first[item.returnKey] ?? 0);
+
+    // JUST THIS CHANGE 
+    const finalValue = item.valueKey
+      ? todayTotal - Number(first[item.valueKey] || 0)
+      : null;
 
     return {
       ...item,
       isNegative: returnValue < 0,
-      numericValue: Number(returnValue),
-      value
+      numericValue: returnValue,
+      value: finalValue,  // this will display
     };
   });
 }, [portfolios, staticData.horizontalItems]);
+
 
 
   // Improved Loading UI with skeleton
@@ -278,13 +285,14 @@ const horizontalCardsData = useMemo(() => {
   {key === "today_total" ? "PORTFOLIO VALUE" : key.replace(/_/g, " ")}
 </p>
 
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
-        {formatValue(first[key], true)}
-      </h2>
+     <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white break-words">
+  {formatValue(first[key], true)}
+</h2>
+
 
       {key === "today_total" && (
         <p className="text-[11px] text-gray-700 dark:text-neutral-400 mt-1">
-          Today's Change:{" "}
+          {/* Today's Change:{" "}
          <span
   className={
     Number(first.today_total - first.yesterday_total) < 0
@@ -296,7 +304,7 @@ const horizontalCardsData = useMemo(() => {
     ? `+${formatValue(first.today_total - first.yesterday_total, true)}`
     : `-${formatValue(Math.abs(first.today_total - first.yesterday_total), true)}`
   }
-</span>{" "}
+</span>{" "} */}
 
           • Last Updated:{" "}
       {formatDate(first.latest_date)}
@@ -344,7 +352,7 @@ const horizontalCardsData = useMemo(() => {
           min-w-[260px] sm:min-w-[280px] flex-shrink-0 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           {/* Title */}
-                  <p className="text-[10px] text-gray-500 dark:text-gray-200 uppercase mb-2">
+                  <p className="text-[20px] text-gray-500 dark:text-gray-200 uppercase mb-2">
   {item.title}
 </p>
 
@@ -353,30 +361,49 @@ const horizontalCardsData = useMemo(() => {
             <div className="text-[13px] font-medium flex flex-col gap-1 text-gray-600 dark:text-gray-400">
               
               {/* Return */}
-              <div className="flex items-center justify-between w-[120px]">
-              <span className="opacity-75 dark:text-white">Return</span>
+             <div className="flex items-center justify-between w-[120px]">
+                <span className="opacity-75 dark:text-white">Return</span>
+  <span
+    className={`font-bold text-[16px] ${
+      item.isNegative ? "text-red-500" : "text-green-500"
+    }`}
+  >
+    {item.numericValue > 0 ? "+" : ""}
+    {item.numericValue?.toFixed(2)}%
+  </span>
+</div>
 
-                <span
-                  className={`font-bold ${
-                    item.isNegative ? "text-red-500" : "text-green-500"
-                  }`}
-                >
-                  {item.numericValue > 0 ? "+" : ""}
-                  {item.numericValue?.toFixed(2)}%
-                </span>
-              </div>
 
               {/* Value */}
-              {item.value !== null && (
-                <div className="flex items-center justify-between w-[120px]">
-                 <span className="opacity-75 dark:text-white">Value</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {item.value !== null
-                      ? formatValue(Number(item.value), true)
-                      : "—"}
-                  </span>
-                </div>
-              )}
+{item.value !== null && (
+  <div className="flex items-center justify-between w-[120px]">
+    <span className="opacity-75 dark:text-white">Change</span>
+
+    <span
+      className={`font-semibold text-[15px] flex items-center justify-end w-[90px] ${
+        Number(item.value) > 0
+          ? "text-green-500"
+          : Number(item.value) < 0
+          ? "text-red-500"
+          : "text-gray-400"
+      }`}
+    >
+      {/* SIGN BOX */}
+      <span className="inline-block w-[12px] text-right">
+        {Number(item.value) > 0
+          ? "+"
+          : Number(item.value) < 0
+          ? "-"
+          : ""}
+      </span>
+
+      {/* VALUE without sign */}
+      {formatValue(Math.abs(Number(item.value)), true)}
+    </span>
+  </div>
+)}
+
+
             </div>
 
             {/* Sparkline */}
