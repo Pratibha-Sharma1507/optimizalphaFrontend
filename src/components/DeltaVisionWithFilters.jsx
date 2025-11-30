@@ -16,6 +16,7 @@ axios.defaults.withCredentials = true;
 export default function DeltaVisionAssetClassChart() {
   const [selectedView, setSelectedView] = useState("Total Group");
   const [selectedPeriodType, setSelectedPeriodType] = useState("Yearly");
+  const [selectedValueType, setSelectedValueType] = useState("Abs");
   const [chartData, setChartData] = useState([]);
   const [availableYears, setAvailableYears] = useState([]);
   const [categoryOrder, setCategoryOrder] = useState([]);
@@ -26,6 +27,7 @@ export default function DeltaVisionAssetClassChart() {
 
   const viewByOptions = ["Total Group", "Entity", "Asset Class", "Sub-Asset Class"];
   const periodOptions = ["Monthly", "Yearly"];
+  const valueTypeOptions = ["Abs", "Percentage"];
 
   // Color palette for different categories
   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -49,6 +51,61 @@ export default function DeltaVisionAssetClassChart() {
     
     return () => observer.disconnect();
   }, []);
+
+  // Function to convert absolute values to percentages
+  const convertToPercentage = (data, categories) => {
+    // For Total Group, calculate percentage across all years/months
+    if (selectedView === "Total Group") {
+      // Calculate grand total across all periods
+      let grandTotal = 0;
+      data.forEach(item => {
+        categories.forEach(cat => {
+          if (item[cat]) {
+            grandTotal += item[cat];
+          }
+        });
+      });
+      
+      // Convert each period to percentage of grand total
+      return data.map(item => {
+        const newItem = { name: item.name, month: item.month, year: item.year };
+        
+        if (grandTotal > 0) {
+          categories.forEach(cat => {
+            if (item[cat]) {
+              newItem[cat] = (item[cat] / grandTotal) * 100;
+            }
+          });
+        }
+        
+        return newItem;
+      });
+    }
+    
+    // For other views, calculate percentage within each period
+    return data.map(item => {
+      const newItem = { name: item.name, month: item.month, year: item.year };
+      
+      // Calculate total for this period
+      let total = 0;
+      categories.forEach(cat => {
+        if (item[cat]) {
+          total += item[cat];
+        }
+      });
+      
+      // Convert each category to percentage
+      if (total > 0) {
+        categories.forEach(cat => {
+          if (item[cat]) {
+            newItem[cat] = (item[cat] / total) * 100;
+          }
+        });
+      }
+      
+      return newItem;
+    });
+  };
 
   useEffect(() => {
     let apiUrl = "";
@@ -206,9 +263,15 @@ export default function DeltaVisionAssetClassChart() {
       console.log("Formatted Data:", formatted);
       console.log("Category Order:", categories);
       
+      setCategoryOrder(categories);
+      
+      // Convert to percentage if needed
+      if (selectedValueType === "Percentage") {
+        formatted = convertToPercentage(formatted, categories);
+      }
+      
       setChartData(formatted);
       setAvailableYears(Array.from(years).sort());
-      setCategoryOrder(categories);
     })
     .catch(err => {
       console.error("API Error:", err);
@@ -216,7 +279,7 @@ export default function DeltaVisionAssetClassChart() {
       setAvailableYears([]);
       setCategoryOrder([]);
     });
-  }, [selectedPeriodType, selectedView]);
+  }, [selectedPeriodType, selectedView, selectedValueType]);
 
   // Responsive values based on screen size
   const isMobile = windowWidth < 640;
@@ -242,7 +305,10 @@ export default function DeltaVisionAssetClassChart() {
               />
               <span className="font-medium text-gray-600 dark:text-gray-300 truncate">{entry.name}:</span>
               <span className="font-bold whitespace-nowrap" style={{ color: entry.color }}>
-                ₹{Number(entry.value).toLocaleString('en-IN')}
+                {selectedValueType === "Percentage"
+                  ? `${Number(entry.value).toFixed(2)}%`
+                  : `₹${Number(entry.value).toLocaleString('en-IN')}`
+                }
               </span>
             </p>
           ))}
@@ -280,12 +346,13 @@ export default function DeltaVisionAssetClassChart() {
   return (
     <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 p-4 sm:p-6 lg:p-8 mb-8 mt-6 sm:mt-8 lg:mt-10 shadow-lg">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 lg:gap-0 mb-6 sm:mb-8">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 lg:gap-6 mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
-          Delta Vision
+          Exposure Trend
         </h2>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-4 lg:gap-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-4 lg:gap-6 flex-wrap">
+          {/* View By Selector */}
           <div className="flex items-center gap-2 sm:gap-3">
             <label className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
               View By:
@@ -301,19 +368,38 @@ export default function DeltaVisionAssetClassChart() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <label className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
-              Compare Periods:
-            </label>
-            <select
-              value={selectedPeriodType}
-              onChange={(e) => setSelectedPeriodType(e.target.value)}
-              className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 w-full sm:w-36 dark:bg-[#1f1f1f] dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {periodOptions.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
+          {/* Period Toggle */}
+          <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-[#1f1f1f] p-1">
+            {periodOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setSelectedPeriodType(option)}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
+                  selectedPeriodType === option
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          {/* Value Type Toggle */}
+          <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-[#1f1f1f] p-1">
+            {valueTypeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setSelectedValueType(option)}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
+                  selectedValueType === option
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -362,7 +448,7 @@ export default function DeltaVisionAssetClassChart() {
               
               <YAxis 
                 label={{ 
-                  value: 'Values (₹)', 
+                  value: selectedValueType === "Percentage" ? 'Percentage (%)' : 'Abs (₹)', 
                   angle: -90, 
                   position: 'insideLeft',
                   style: { 
@@ -372,6 +458,9 @@ export default function DeltaVisionAssetClassChart() {
                   }
                 }}
                 tickFormatter={(v) => {
+                  if (selectedValueType === "Percentage") {
+                    return `${v.toFixed(0)}%`;
+                  }
                   if (v >= 10000000) return `${(v/10000000).toFixed(1)}Cr`;
                   if (v >= 100000) return `${(v/100000).toFixed(1)}L`;
                   if (v >= 1000) return `${(v/1000).toFixed(0)}K`;
@@ -386,6 +475,7 @@ export default function DeltaVisionAssetClassChart() {
                 axisLine={{ stroke: axisColor, strokeWidth: 2 }}
                 width={getResponsiveValue(60, 75, 90)}
                 tickCount={8}
+                domain={[0, 'auto']}
               />
               
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.05)' }} />

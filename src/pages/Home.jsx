@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(false); // Changed from true to false
   const [error, setError] = useState(null);
+  const [news, setNews] = useState([]);
+    const [newsLoading, setNewsLoading] = useState(true);
   const scrollRef = useRef();
   const { currency } = useOutletContext();
   const hasFetchedRef = useRef(false); // To prevent double fetch
@@ -43,10 +45,35 @@ const fetchPortfolios = async () => {
   }
 };
 
+const fetchNews = async () => {
+  try {
+    setNewsLoading(true);
 
+    const apiKey = import.meta.env.VITE_NEWS_API_KEY;
+
+    const response = await fetch("https://stock.indianapi.in/news", {
+      method: "GET",
+      headers: {
+        "x-api-key": apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch news: ${response.status}`);
+    }
+
+    const data = await response.json();
+    setNews(data.slice(0, 5));
+  } catch (err) {
+    console.error("Error fetching news:", err);
+  } finally {
+    setNewsLoading(false);
+  }
+};
 
 useEffect(() => {
   fetchPortfolios();
+    fetchNews();
 }, [currency, selectedPan]);
 
 
@@ -135,10 +162,10 @@ useEffect(() => {
     topStatsKeys: ["today_total"],
     horizontalItems: [
     { title: "Daily", returnKey: "daily_return",valueKey: "yesterday_total"  },
-    { title: "1-Week", returnKey: "1w_return",  valueKey: "1w_value" },
-    { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
-    { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
-    { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
+    { title: "1 Week", returnKey: "1w_return",  valueKey: "1w_value" },
+    { title: "1 Month", returnKey: "1m_return", valueKey: "1m_value" },
+    { title: "3 Month", returnKey: "3m_return", valueKey: "3m_value" },
+    { title: "6 Month", returnKey: "6m_return", valueKey: "6m_value" },
     { title: "MTD", returnKey: "mtd_return", valueKey: "mtd_value" },
     { title: "FYTD", returnKey: "fytd_return", valueKey: "fytd_value" },
   ],
@@ -220,6 +247,11 @@ const horizontalCardsData = useMemo(() => {
   });
 }, [portfolios, staticData.horizontalItems]);
 
+
+const capitalizeWords = (str) =>
+  str
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
 
   // Improved Loading UI with skeleton
@@ -352,8 +384,9 @@ const horizontalCardsData = useMemo(() => {
           min-w-[260px] sm:min-w-[280px] flex-shrink-0 shadow-sm hover:shadow-lg transition-all duration-300"
         >
           {/* Title */}
-                  <p className="text-[20px] text-gray-500 dark:text-gray-200 uppercase mb-2">
-  {item.title}
+                <p className="text-[20px] text-gray-500 dark:text-gray-200 mb-2">
+
+   {item.title}
 </p>
 
           {/* CONTENT WRAPPER */}
@@ -470,25 +503,43 @@ const horizontalCardsData = useMemo(() => {
         </div>
 
         {/* Right 2 Columns - Significant News */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#141414] p-4 md:p-5 rounded-lg border border-gray-300 dark:border-neutral-800 shadow-sm">
+         <div className="lg:col-span-2 bg-white dark:bg-[#141414] p-4 md:p-5 rounded-lg border border-gray-300 dark:border-neutral-800 shadow-sm">
           <h3 className="font-semibold text-sm mb-1 text-gray-900 dark:text-white">Significant News</h3>
           <p className="text-[11px] text-gray-700 dark:text-neutral-400 mb-3">
-            Curated news & articles by Gen-AI
+            Curated news & articles by indian api
           </p>
-          <div className="space-y-2">
-            {staticData.news.map((news, i) => (
-              <div
-                key={i}
-                className="bg-gray-50 dark:bg-[#0D0D0D] p-3 rounded-lg border border-gray-200 dark:border-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-800 transition"
-              >
-                <p className="text-xs font-medium text-gray-900 dark:text-neutral-200">{news.title}</p>
-                <p className="text-[10px] text-gray-600 dark:text-neutral-500">{news.source} • {news.date}</p>
-              </div>
-            ))}
-          </div>
+          
+          {newsLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-gray-50 dark:bg-[#0D0D0D] p-3 rounded-lg border border-gray-200 dark:border-neutral-800 animate-pulse">
+                  <div className="h-3 bg-gray-300 dark:bg-neutral-700 rounded mb-2"></div>
+                  <div className="h-2 bg-gray-200 dark:bg-neutral-800 rounded w-1/3"></div>
+                </div>
+              ))}
+            </div>
+          ) : news.length > 0 ? (
+            <div className="space-y-2">
+              {news.map((article, i) => (
+                <a
+                  key={i}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gray-50 dark:bg-[#0D0D0D] p-3 rounded-lg border border-gray-200 dark:border-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-800 transition"
+                >
+                  <p className="text-xs font-medium text-gray-900 dark:text-neutral-200 mb-2">{article.title}</p>
+                  <p className="text-[10px] text-gray-600 dark:text-neutral-500">
+                    {article.source} • {new Date(article.pub_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-600 dark:text-neutral-400">No news available</p>
+          )}
         </div>
       </div>
-
       <div className="space-y-4 md:space-y-6">
         {/* Bottom Section - Upcoming Events and Recent Notifications */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 md:mb-6">

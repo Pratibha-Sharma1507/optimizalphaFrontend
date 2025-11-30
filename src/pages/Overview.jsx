@@ -309,10 +309,10 @@ useEffect(() => {
 
   const horizontalItems = [
        { title: "Daily", returnKey: "daily_return", valueKey: "yesterday_total"},
-    { title: "1-Week", returnKey: "1w_return" , valueKey: "1w_value"},
-    { title: "1-Month", returnKey: "1m_return", valueKey: "1m_value" },
-    { title: "3-Month", returnKey: "3m_return", valueKey: "3m_value" },
-    { title: "6-Month", returnKey: "6m_return", valueKey: "6m_value" },
+    { title: "1 Week", returnKey: "1w_return" , valueKey: "1w_value"},
+    { title: "1 Month", returnKey: "1m_return", valueKey: "1m_value" },
+    { title: "3 Month", returnKey: "3m_return", valueKey: "3m_value" },
+    { title: "6 Month", returnKey: "6m_return", valueKey: "6m_value" },
     { title: "MTD", returnKey: "mtd_return", valueKey: "mtd_value" },
     { title: "FYTD", returnKey: "fytd_return", valueKey: "fytd_value" },
   ];
@@ -490,7 +490,7 @@ const formatValue = (v, isCurrency = false) => {
           className="bg-white dark:bg-[#141414] p-4 rounded-lg border border-gray-200 dark:border-neutral-800 min-w-[240px] sm:min-w-[260px] flex-shrink-0 shadow-sm hover:shadow-md transition"
 
         >
-          <p className="text-[20px] text-gray-500 dark:text-gray-200 uppercase mb-2">
+          <p className="text-[20px] text-gray-500 dark:text-gray-200">
   {item.title}
 </p>
 

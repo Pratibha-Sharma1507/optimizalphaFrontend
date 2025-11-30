@@ -241,14 +241,28 @@ export default function PremiumDrilldownDonut() {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Portfolio Breakdown</h3>
         
-        <select 
-          value={viewMode}
-          onChange={(e) => setViewMode(e.target.value)}
-          className="text-xs px-3 py-2 w-36 border rounded dark:bg-gray-800 dark:border-gray-700"
-        >
-          <option value="value">Value</option>
-          <option value="percentage">Percentage</option>
-        </select>
+        <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-700 p-1 bg-gray-100 dark:bg-gray-800">
+          <button
+            onClick={() => setViewMode("value")}
+            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
+              viewMode === "value"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            Abs
+          </button>
+          <button
+            onClick={() => setViewMode("percentage")}
+            className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
+              viewMode === "percentage"
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            Percentage
+          </button>
+        </div>
       </div>
 
       {/* Breadcrumb Navigation */}
